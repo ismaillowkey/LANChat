@@ -1,0 +1,61 @@
+## Build results & publish folders
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+publish/
+Publish/
+
+## Visual Studio & IDE cache / settings
+.vs/
+.vscode/
+Generated\ Files/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+## .NET Core & MAUI
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.intermediate.manifest
+AppPackages/
+BundleArtifacts/
+Package.StoreAssociation.xml
+_pkginfo.txt
+
+## Android & iOS build artifacts
+*.apk
+*.aab
+*.dex
+*.keystore
+!debug.keystore
+
+## Test Results
+TestResults/
+[Tt]est[Rr]esult*/
+*.trx
+
+## Temporary files & OS files
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.swp
+*~
