@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="456" height="456" viewBox="0 0 456 456" xmlns="http://www.w3.org/2000/svg">
+    <!-- Chat Bubble Badge -->
+    <path d="M 228,125 C 160,125 110,170 110,225 C 110,256 128,283 158,300 L 148,335 C 146,342 154,347 160,343 L 205,320 C 213,323 220,325 228,325 C 296,325 346,280 346,225 C 346,170 296,125 228,125 Z" fill="#FFFFFF"/>
+    
+    <!-- Bold LChat Text -->
+    <text x="228" y="222" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="44" fill="#4F46E5" text-anchor="middle" dominant-baseline="central">LChat</text>
+    
+    <!-- Online Green Status Dot -->
+    <circle cx="275" cy="180" r="10" fill="#10B981" stroke="#FFFFFF" stroke-width="3"/>
+</svg>

@@ -151,6 +151,18 @@ public partial class MainChatViewModel : ObservableObject
                 }
             }
 
+            // Trigger Android System Notification with sound/vibrate
+            if (!msg.IsOutgoing)
+            {
+                string notifText = msg.IsImage
+                    ? Strings.FormatUserSentImage(msg.SenderName)
+                    : msg.IsVideo
+                        ? Strings.FormatUserSentVideo(msg.SenderName)
+                        : msg.Content;
+
+                Services.NotificationService.ShowNotification(msg.SenderName, notifText);
+            }
+
             ApplyFilter();
         });
     }
