@@ -3,8 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:converters="clr-namespace:LanChat.Maui.Converters"
              xmlns:models="clr-namespace:LanChat.Core.Models;assembly=LanChat.Core"
+             xmlns:viewmodels="clr-namespace:LanChat.Maui.ViewModels"
              x:Class="LanChat.Maui.MainPage"
-             BackgroundColor="#0F172A"
+             BackgroundColor="#F8FAFC"
              Shell.NavBarIsVisible="False">
 
     <ContentPage.Resources>
@@ -13,190 +14,529 @@
         </ResourceDictionary>
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto">
+    <Grid>
 
-        <!-- 1. TOP APP BAR & DEVICE STATUS -->
-        <Border Grid.Row="0" BackgroundColor="#1E293B" StrokeThickness="0" Padding="16,14,16,12">
-            <VerticalStackLayout Spacing="8">
-                <Grid ColumnDefinitions="*,Auto">
-                    <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
-                        <Border BackgroundColor="#4F46E5" StrokeShape="RoundRectangle 8" WidthRequest="32" HeightRequest="32">
-                            <Label Text="⚡" FontSize="16" HorizontalOptions="Center" VerticalOptions="Center" />
+        <!-- 1. MAIN CHAT AREA -->
+        <Grid RowDefinitions="Auto,*,Auto">
+
+            <!-- TOP APP BAR -->
+            <VerticalStackLayout Grid.Row="0" Spacing="0" BackgroundColor="#FFFFFF">
+                <VerticalStackLayout Spacing="8" Padding="12,10">
+                    
+                    <!-- Line 1: Hamburger Menu [☰] + Active Chat Target (Broadcast/Peer) + Language Toggle -->
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" VerticalOptions="Center">
+                        
+                        <!-- Hamburger Button (Buka Panel Kiri) with Unread Notification Indicator -->
+                        <Border Grid.Column="0" BackgroundColor="#EEF2FF" Stroke="#C7D2FE" StrokeThickness="1" StrokeShape="RoundRectangle 8" 
+                                WidthRequest="40" HeightRequest="40" VerticalOptions="Center">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding OpenDrawerCommand}"/>
+                            </Border.GestureRecognizers>
+                            <Grid>
+                                <Label Text="☰" FontSize="18" TextColor="#4F46E5" HorizontalOptions="Center" VerticalOptions="Center"/>
+                                <!-- Red unread alert dot on Hamburger if any peer sent unread message -->
+                                <BoxView Color="#EF4444" CornerRadius="4" WidthRequest="8" HeightRequest="8" 
+                                         HorizontalOptions="End" VerticalOptions="Start" Margin="0,4,4,0" 
+                                         IsVisible="{Binding HasAnyUnread}"/>
+                            </Grid>
                         </Border>
-                        <VerticalStackLayout VerticalOptions="Center">
-                            <Label Text="LAN CHAT" FontAttributes="Bold" TextColor="#F8FAFC" FontSize="16" />
-                            <Label Text="P2P Local Messenger" TextColor="#94A3B8" FontSize="11" />
-                        </VerticalStackLayout>
-                    </HorizontalStackLayout>
 
-                    <!-- Network Status Pill -->
-                    <Border Grid.Column="1" BackgroundColor="#0F172A" StrokeShape="RoundRectangle 6" 
-                            Stroke="#334155" StrokeThickness="1" Padding="8,4" VerticalOptions="Center">
-                        <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
-                            <BoxView Color="#10B981" CornerRadius="4" WidthRequest="8" HeightRequest="8" VerticalOptions="Center"/>
-                            <Label Text="{Binding Manager.LocalIpAddress}" TextColor="#E2E8F0" FontSize="11" FontAttributes="Bold"/>
-                            <Label Text=":" TextColor="#64748B" FontSize="11"/>
-                            <Label Text="{Binding Manager.LocalTcpPort}" TextColor="#94A3B8" FontSize="11"/>
-                            <Label Text="|" TextColor="#475569" FontSize="10"/>
-                            <Label Text="{Binding Manager.LocalMacAddress}" TextColor="#818CF8" FontSize="10"/>
+                        <!-- Active Room Title & Chat Mode Badge -->
+                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                            <Label Text="{Binding SelectedTarget.DisplayName}" TextColor="#0F172A" FontSize="14" FontAttributes="Bold" LineBreakMode="TailTruncation"/>
+                            <!-- Chat Mode Badge (Public Broadcast or Private 1-on-1) -->
+                            <HorizontalStackLayout Spacing="6" Margin="0,2,0,0">
+                                <Border StrokeShape="RoundRectangle 4" Padding="6,1">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="BackgroundColor" Value="#FCE7F3"/>
+                                            <Setter Property="Stroke" Value="#F472B6"/>
+                                            <Setter Property="StrokeThickness" Value="1"/>
+                                            <Style.Triggers>
+                                                <DataTrigger TargetType="Border" Binding="{Binding SelectedTarget.IsBroadcastTarget}" Value="True">
+                                                    <Setter Property="BackgroundColor" Value="#DBEAFE"/>
+                                                    <Setter Property="Stroke" Value="#93C5FD"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Label Text="{Binding CurrentChatModeBadgeText}" FontSize="9" FontAttributes="Bold">
+                                        <Label.Style>
+                                            <Style TargetType="Label">
+                                                <Setter Property="TextColor" Value="#9D174D"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding SelectedTarget.IsBroadcastTarget}" Value="True">
+                                                        <Setter Property="TextColor" Value="#1E40AF"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Label.Style>
+                                    </Label>
+                                </Border>
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+
+                        <!-- Language Switcher Toggle (ID / EN) -->
+                        <Border Grid.Column="2" BackgroundColor="#F1F5F9" Stroke="#CBD5E1" StrokeThickness="1" StrokeShape="RoundRectangle 8" Padding="2" VerticalOptions="Center">
+                            <HorizontalStackLayout Spacing="2" VerticalOptions="Center">
+                                <!-- Indonesian Button -->
+                                <Button Text="🇮🇩 ID" Command="{Binding SetIndonesianCommand}"
+                                        FontSize="11" FontAttributes="Bold" HeightRequest="28" Padding="8,0" CornerRadius="6">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="BackgroundColor" Value="Transparent"/>
+                                            <Setter Property="TextColor" Value="#64748B"/>
+                                            <Style.Triggers>
+                                                <DataTrigger TargetType="Button" Binding="{Binding Strings.IsIndonesian}" Value="True">
+                                                    <Setter Property="BackgroundColor" Value="#FFFFFF"/>
+                                                    <Setter Property="TextColor" Value="#4338CA"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <!-- English Button -->
+                                <Button Text="🇬🇧 EN" Command="{Binding SetEnglishCommand}"
+                                        FontSize="11" FontAttributes="Bold" HeightRequest="28" Padding="8,0" CornerRadius="6">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="BackgroundColor" Value="Transparent"/>
+                                            <Setter Property="TextColor" Value="#64748B"/>
+                                            <Style.Triggers>
+                                                <DataTrigger TargetType="Button" Binding="{Binding Strings.IsEnglish}" Value="True">
+                                                    <Setter Property="BackgroundColor" Value="#FFFFFF"/>
+                                                    <Setter Property="TextColor" Value="#4338CA"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </HorizontalStackLayout>
+                        </Border>
+                    </Grid>
+
+                    <!-- Line 2: Network Info Pill (IP, Port, MAC) -->
+                    <Border BackgroundColor="#F8FAFC" Stroke="#E2E8F0" StrokeThickness="1" StrokeShape="RoundRectangle 8" Padding="8,5">
+                        <HorizontalStackLayout Spacing="6" HorizontalOptions="Center" VerticalOptions="Center">
+                            <BoxView Color="#10B981" CornerRadius="4" WidthRequest="7" HeightRequest="7" VerticalOptions="Center"/>
+                            <Label Text="IP:" TextColor="#64748B" FontSize="11" VerticalOptions="Center"/>
+                            <Label Text="{Binding Manager.LocalIpAddress}" TextColor="#0F172A" FontSize="11" FontAttributes="Bold" VerticalOptions="Center"/>
+                            <Label Text="•" TextColor="#CBD5E1" FontSize="10" VerticalOptions="Center"/>
+                            <Label Text="Port:" TextColor="#64748B" FontSize="11" VerticalOptions="Center"/>
+                            <Label Text="{Binding Manager.LocalTcpPort}" TextColor="#0F172A" FontSize="11" FontAttributes="Bold" VerticalOptions="Center"/>
+                            <Label Text="•" TextColor="#CBD5E1" FontSize="10" VerticalOptions="Center"/>
+                            <Label Text="MAC:" TextColor="#64748B" FontSize="11" VerticalOptions="Center"/>
+                            <Label Text="{Binding Manager.LocalMacAddress}" TextColor="#4F46E5" FontSize="10" FontAttributes="Bold" VerticalOptions="Center"/>
                         </HorizontalStackLayout>
                     </Border>
-                </Grid>
-
-                <!-- Device Name input -->
-                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                    <Label Text="Device:" TextColor="#94A3B8" FontSize="12" VerticalOptions="Center"/>
-                    <Entry Grid.Column="1" Text="{Binding DeviceName}" TextColor="#F8FAFC" 
-                           BackgroundColor="#0F172A" FontSize="12" HeightRequest="36" />
-                    <Button Grid.Column="2" Text="Simpan" Command="{Binding SaveDeviceNameCommand}"
-                            BackgroundColor="#4F46E5" TextColor="White" FontSize="11" HeightRequest="36" Padding="12,0"/>
-                </Grid>
+                </VerticalStackLayout>
+                <!-- 1px Bottom Divider for Top Bar -->
+                <BoxView HeightRequest="1" Color="#E2E8F0" HorizontalOptions="Fill"/>
             </VerticalStackLayout>
-        </Border>
 
-        <!-- 2. TARGET SELECTOR (BROADCAST OR DIRECT PEER) -->
-        <Border Grid.Row="1" BackgroundColor="#111827" StrokeThickness="0" Padding="16,10">
-            <VerticalStackLayout Spacing="4">
-                <Label Text="KIRIM KE (TARGET):" TextColor="#64748B" FontSize="10" FontAttributes="Bold"/>
-                <Border BackgroundColor="#1E293B" StrokeShape="RoundRectangle 8" Stroke="#334155" StrokeThickness="1" Padding="10,0">
-                    <Picker ItemsSource="{Binding Manager.Peers}"
-                            ItemDisplayBinding="{Binding DisplayName}"
-                            SelectedItem="{Binding SelectedTarget, Mode=TwoWay}"
-                            TextColor="#38BDF8" Title="Pilih Tujuan Chat" 
-                            TitleColor="#94A3B8" FontAttributes="Bold" FontSize="13" HeightRequest="40" />
-                </Border>
-            </VerticalStackLayout>
-        </Border>
+            <!-- MESSAGE FEED (TERFILTER SESUAI ROOM: BROADCAST ATAU DIRECT PEER) -->
+            <CollectionView Grid.Row="1" x:Name="MessagesList" 
+                            ItemsSource="{Binding FilteredMessages}" 
+                            Margin="12,6">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                </CollectionView.ItemsLayout>
 
-        <!-- 3. MESSAGE LIST -->
-        <CollectionView Grid.Row="2" x:Name="MessagesList" 
-                        ItemsSource="{Binding Manager.Messages}" 
-                        Margin="12,8">
-            <CollectionView.ItemsLayout>
-                <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
-            </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:ChatMessage">
+                        <Grid>
+                            <!-- Bubble Alignment: Outgoing to End, Incoming to Start -->
+                            <Border StrokeShape="RoundRectangle 12" StrokeThickness="1" Padding="12,9"
+                                    MaximumWidthRequest="320">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="HorizontalOptions" Value="Start"/>
+                                        <Setter Property="BackgroundColor" Value="#FFFFFF"/>
+                                        <Setter Property="Stroke" Value="#E2E8F0"/>
+                                        <Style.Triggers>
+                                            <DataTrigger TargetType="Border" Binding="{Binding IsOutgoing}" Value="True">
+                                                <Setter Property="HorizontalOptions" Value="End"/>
+                                                <Setter Property="BackgroundColor" Value="#4F46E5"/>
+                                                <Setter Property="Stroke" Value="#4338CA"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
 
-            <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="models:ChatMessage">
-                    <Grid>
-                        <!-- Bubble Alignment: Outgoing to End, Incoming to Start -->
-                        <Border StrokeShape="RoundRectangle 12" StrokeThickness="1" Padding="12,10"
-                                MaximumWidthRequest="320">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="HorizontalOptions" Value="Start"/>
-                                    <Setter Property="BackgroundColor" Value="#1E293B"/>
-                                    <Setter Property="Stroke" Value="#334155"/>
-                                    <Style.Triggers>
-                                        <DataTrigger TargetType="Border" Binding="{Binding IsOutgoing}" Value="True">
-                                            <Setter Property="HorizontalOptions" Value="End"/>
-                                            <Setter Property="BackgroundColor" Value="#4338CA"/>
-                                            <Setter Property="Stroke" Value="#4F46E5"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-
-                            <VerticalStackLayout Spacing="4">
-                                <!-- Sender & Badge Header -->
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
-                                        <Label Text="{Binding SenderName}" FontAttributes="Bold" FontSize="12" TextColor="#F8FAFC"/>
-                                        
-                                        <!-- Direct vs Broadcast badge -->
-                                        <Border StrokeShape="RoundRectangle 4" Padding="6,1">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="BackgroundColor" Value="#1D4ED8"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger TargetType="Border" Binding="{Binding IsDirect}" Value="True">
-                                                            <Setter Property="BackgroundColor" Value="#BE185D"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                            <Label FontSize="9" TextColor="White" FontAttributes="Bold">
+                                <VerticalStackLayout Spacing="3">
+                                    <!-- Sender & Badge Header -->
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                                            <!-- Sender Name -->
+                                            <Label Text="{Binding SenderName}" FontAttributes="Bold" FontSize="12">
                                                 <Label.Style>
                                                     <Style TargetType="Label">
-                                                        <Setter Property="Text" Value="Broadcast"/>
+                                                        <Setter Property="TextColor" Value="#0F172A"/>
                                                         <Style.Triggers>
-                                                            <DataTrigger TargetType="Label" Binding="{Binding IsDirect}" Value="True">
-                                                                <Setter Property="Text" Value="Direct"/>
+                                                            <DataTrigger TargetType="Label" Binding="{Binding IsOutgoing}" Value="True">
+                                                                <Setter Property="TextColor" Value="#FFFFFF"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
                                                 </Label.Style>
                                             </Label>
-                                        </Border>
-                                    </HorizontalStackLayout>
+                                            
+                                            <!-- Direct vs Broadcast badge -->
+                                            <Border StrokeShape="RoundRectangle 4" Padding="5,1">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="BackgroundColor" Value="#DBEAFE"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger TargetType="Border" Binding="{Binding IsDirect}" Value="True">
+                                                                <Setter Property="BackgroundColor" Value="#FCE7F3"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger TargetType="Border" Binding="{Binding IsOutgoing}" Value="True">
+                                                                <Setter Property="BackgroundColor" Value="#6366F1"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Label FontSize="9" FontAttributes="Bold">
+                                                    <Label.Style>
+                                                        <Style TargetType="Label">
+                                                            <Setter Property="Text" Value="Broadcast"/>
+                                                            <Setter Property="TextColor" Value="#1E40AF"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger TargetType="Label" Binding="{Binding IsDirect}" Value="True">
+                                                                    <Setter Property="Text" Value="Direct"/>
+                                                                    <Setter Property="TextColor" Value="#9D174D"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger TargetType="Label" Binding="{Binding IsOutgoing}" Value="True">
+                                                                    <Setter Property="TextColor" Value="#FFFFFF"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Label.Style>
+                                                </Label>
+                                            </Border>
+                                        </HorizontalStackLayout>
 
-                                    <Label Grid.Column="1" Text="{Binding FormattedTime}" FontSize="10" TextColor="#94A3B8" VerticalOptions="Center"/>
-                                </Grid>
+                                        <!-- Time -->
+                                        <Label Grid.Column="1" Text="{Binding FormattedTime}" FontSize="10" VerticalOptions="Center">
+                                            <Label.Style>
+                                                <Style TargetType="Label">
+                                                    <Setter Property="TextColor" Value="#94A3B8"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger TargetType="Label" Binding="{Binding IsOutgoing}" Value="True">
+                                                            <Setter Property="TextColor" Value="#E0E7FF"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Label.Style>
+                                        </Label>
+                                    </Grid>
 
-                                <!-- Image attachment (If file exists on disk) -->
-                                <Border StrokeShape="RoundRectangle 8" IsVisible="{Binding HasImagePreview}" Margin="0,4">
-                                    <Image Source="{Binding ImageData, Converter={StaticResource ByteArrayToImageSourceConverter}}" 
-                                           Aspect="AspectFit" MaximumHeightRequest="240" />
-                                </Border>
+                                    <!-- Image attachment (If file exists on disk) -->
+                                    <Border StrokeShape="RoundRectangle 8" IsVisible="{Binding HasImagePreview}" Margin="0,3">
+                                        <Image Source="{Binding ImageData, Converter={StaticResource ByteArrayToImageSourceConverter}}" 
+                                               Aspect="AspectFit" MaximumHeightRequest="240" />
+                                    </Border>
 
-                                <!-- Missing image fallback (WhatsApp style when image file is deleted) -->
-                                <Border StrokeShape="RoundRectangle 8" IsVisible="{Binding IsMissingImage}" Margin="0,4" Padding="10,8" BackgroundColor="#1E293B">
-                                    <VerticalStackLayout Spacing="2">
-                                        <Label Text="{Binding MissingMediaNotice}" FontAttributes="Bold" FontSize="12" TextColor="#F8FAFC"/>
-                                        <Label Text="File gambar telah dihapus dari perangkat" FontSize="10" TextColor="#94A3B8" FontAttributes="Italic"/>
-                                    </VerticalStackLayout>
-                                </Border>
-
-                                <!-- Video attachment (If any) -->
-                                <Border StrokeShape="RoundRectangle 8" BackgroundColor="#334155" IsVisible="{Binding IsVideo}" Margin="0,4" Padding="10,8">
-                                    <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
-                                        <Label Text="🎬" FontSize="20" VerticalOptions="Center"/>
-                                        <VerticalStackLayout VerticalOptions="Center">
-                                            <Label Text="{Binding FileName}" FontAttributes="Bold" FontSize="12" TextColor="White" LineBreakMode="TailTruncation"/>
-                                            <Label Text="{Binding FormattedFileSize}" FontSize="10" TextColor="#CBD5E1"/>
+                                    <!-- Missing image fallback (WhatsApp style when image file is deleted) -->
+                                    <Border StrokeShape="RoundRectangle 8" IsVisible="{Binding IsMissingImage}" Margin="0,3" Padding="10,8">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="BackgroundColor" Value="#F1F5F9"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger TargetType="Border" Binding="{Binding IsOutgoing}" Value="True">
+                                                        <Setter Property="BackgroundColor" Value="#3730A3"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <VerticalStackLayout Spacing="2">
+                                            <Label Text="{Binding MissingMediaNotice}" FontAttributes="Bold" FontSize="11">
+                                                <Label.Style>
+                                                    <Style TargetType="Label">
+                                                        <Setter Property="TextColor" Value="#0F172A"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger TargetType="Label" Binding="{Binding IsOutgoing}" Value="True">
+                                                                <Setter Property="TextColor" Value="#FFFFFF"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Label.Style>
+                                            </Label>
+                                            <Label Text="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:MainChatViewModel}}, Path=Strings.ImageDeletedNotice}" FontSize="9" FontAttributes="Italic">
+                                                <Label.Style>
+                                                    <Style TargetType="Label">
+                                                        <Setter Property="TextColor" Value="#64748B"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger TargetType="Label" Binding="{Binding IsOutgoing}" Value="True">
+                                                                <Setter Property="TextColor" Value="#CBD5E1"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Label.Style>
+                                            </Label>
                                         </VerticalStackLayout>
-                                    </HorizontalStackLayout>
-                                </Border>
+                                    </Border>
 
-                                <!-- Text content (If any) -->
-                                <Label Text="{Binding Content}" FontSize="13" TextColor="#F1F5F9" LineBreakMode="WordWrap" />
-                            </VerticalStackLayout>
+                                    <!-- Video attachment (If any) -->
+                                    <Border StrokeShape="RoundRectangle 8" IsVisible="{Binding IsVideo}" Margin="0,3" Padding="10,8">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="BackgroundColor" Value="#F1F5F9"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger TargetType="Border" Binding="{Binding IsOutgoing}" Value="True">
+                                                        <Setter Property="BackgroundColor" Value="#3730A3"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                                            <Label Text="🎬" FontSize="18" VerticalOptions="Center"/>
+                                            <VerticalStackLayout VerticalOptions="Center">
+                                                <Label Text="{Binding FileName}" FontAttributes="Bold" FontSize="11" LineBreakMode="TailTruncation">
+                                                    <Label.Style>
+                                                        <Style TargetType="Label">
+                                                            <Setter Property="TextColor" Value="#0F172A"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger TargetType="Label" Binding="{Binding IsOutgoing}" Value="True">
+                                                                    <Setter Property="TextColor" Value="#FFFFFF"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Label.Style>
+                                                </Label>
+                                                <Label Text="{Binding FormattedFileSize}" FontSize="9">
+                                                    <Label.Style>
+                                                        <Style TargetType="Label">
+                                                            <Setter Property="TextColor" Value="#64748B"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger TargetType="Label" Binding="{Binding IsOutgoing}" Value="True">
+                                                                    <Setter Property="TextColor" Value="#C7D2FE"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Label.Style>
+                                                </Label>
+                                            </VerticalStackLayout>
+                                        </HorizontalStackLayout>
+                                    </Border>
+
+                                    <!-- Text content (If any) -->
+                                    <Label Text="{Binding Content}" FontSize="13" LineBreakMode="WordWrap">
+                                        <Label.Style>
+                                            <Style TargetType="Label">
+                                                <Setter Property="TextColor" Value="#1E293B"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding IsOutgoing}" Value="True">
+                                                        <Setter Property="TextColor" Value="#FFFFFF"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Label.Style>
+                                    </Label>
+                                </VerticalStackLayout>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- 4. BOTTOM INPUT BAR (PERSIS TAMPILAN DESKTOP) -->
+            <VerticalStackLayout Grid.Row="2" Spacing="0" BackgroundColor="#FFFFFF" VerticalOptions="End">
+                <!-- 1px Top Divider -->
+                <BoxView HeightRequest="1" Color="#E2E8F0" HorizontalOptions="Fill"/>
+
+                <!-- Bottom Bar Content -->
+                <Grid Padding="12,10" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" VerticalOptions="Center">
+
+                    <!-- Attach Photo & Video Buttons -->
+                    <HorizontalStackLayout Grid.Column="0" Spacing="6" VerticalOptions="Center">
+                        <!-- Foto Button [📷 Foto] -->
+                        <Border BackgroundColor="#F1F5F9" Stroke="#CBD5E1" StrokeThickness="1" StrokeShape="RoundRectangle 8" 
+                                Padding="10,8" HeightRequest="40" VerticalOptions="Center">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding PickAndSendPhotoCommand}"/>
+                            </Border.GestureRecognizers>
+                            <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                <Label Text="📷" FontSize="14" VerticalOptions="Center"/>
+                                <Label Text="{Binding Strings.Photo}" FontSize="12" FontAttributes="Bold" TextColor="#334155" VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+                        </Border>
+
+                        <!-- Video Button [🎥 Video] -->
+                        <Border BackgroundColor="#F1F5F9" Stroke="#CBD5E1" StrokeThickness="1" StrokeShape="RoundRectangle 8" 
+                                Padding="10,8" HeightRequest="40" VerticalOptions="Center">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding PickAndSendVideoCommand}"/>
+                            </Border.GestureRecognizers>
+                            <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                <Label Text="🎥" FontSize="14" VerticalOptions="Center"/>
+                                <Label Text="{Binding Strings.Video}" FontSize="12" FontAttributes="Bold" TextColor="#334155" VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+                        </Border>
+                    </HorizontalStackLayout>
+
+                    <!-- Text Input Box (Full width, rounded 8, Light Gray background) -->
+                    <Border Grid.Column="1" BackgroundColor="#F8FAFC" Stroke="#CBD5E1" StrokeThickness="1" StrokeShape="RoundRectangle 8" 
+                            Padding="12,0" HeightRequest="40" VerticalOptions="Center" HorizontalOptions="Fill">
+                        <Entry Text="{Binding MessageInput}" 
+                               Placeholder="{Binding Strings.TypeMessagePlaceholder}" 
+                               PlaceholderColor="#94A3B8" 
+                               TextColor="#0F172A" 
+                               FontSize="13"
+                               VerticalOptions="Center" 
+                               HorizontalOptions="Fill"
+                               ReturnType="Send" 
+                               ReturnCommand="{Binding SendMessageCommand}"/>
+                    </Border>
+
+                    <!-- Send Button [Kirim ➤] (Purple/Indigo, White text, Bold) -->
+                    <Border Grid.Column="2" BackgroundColor="#4F46E5" Stroke="#4338CA" StrokeThickness="1" StrokeShape="RoundRectangle 8" 
+                            Padding="14,0" HeightRequest="40" VerticalOptions="Center">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SendMessageCommand}"/>
+                        </Border.GestureRecognizers>
+                        <HorizontalStackLayout Spacing="6" VerticalOptions="Center" HorizontalOptions="Center">
+                            <Label Text="{Binding Strings.Send}" TextColor="#FFFFFF" FontSize="13" FontAttributes="Bold" VerticalOptions="Center"/>
+                            <Label Text="➤" TextColor="#FFFFFF" FontSize="12" VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
+                    </Border>
+                </Grid>
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- 2. BACKDROP (SCRIM OVERLAY UNTUK MENUTUP DRAWER SAAT DI-TAP) -->
+        <BoxView x:Name="Backdrop" BackgroundColor="#000000" Opacity="0" IsVisible="False">
+            <BoxView.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CloseDrawerCommand}"/>
+            </BoxView.GestureRecognizers>
+        </BoxView>
+
+        <!-- 3. PANEL KIRI (SIDEBAR DRAWER) - PILIHAN BROADCAST & SPESIFIK DEVICE -->
+        <Border x:Name="LeftPanel" HorizontalOptions="Start" WidthRequest="310" TranslationX="-320" IsVisible="False"
+                BackgroundColor="#FFFFFF" StrokeThickness="1" Stroke="#CBD5E1" StrokeShape="Rectangle" Padding="0">
+            <Grid RowDefinitions="Auto,Auto,*,Auto">
+                
+                <!-- Header Panel Kiri -->
+                <Border Grid.Row="0" BackgroundColor="#F8FAFC" StrokeThickness="0,0,0,1" Stroke="#E2E8F0" Padding="16,14">
+                    <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center">
+                        <VerticalStackLayout VerticalOptions="Center">
+                            <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                                <Label Text="📡" FontSize="14" VerticalOptions="Center"/>
+                                <Label Text="{Binding Strings.DevicesOnLan}" FontAttributes="Bold" TextColor="#334155" FontSize="12" VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+                            <Label Text="{Binding Strings.DevicesOnLanSub}" TextColor="#64748B" FontSize="10" Margin="0,2,0,0"/>
+                        </VerticalStackLayout>
+
+                        <!-- Tombol Tutup Panel [✕] -->
+                        <Border Grid.Column="1" BackgroundColor="#F1F5F9" Stroke="#E2E8F0" StrokeThickness="1" StrokeShape="RoundRectangle 6" 
+                                WidthRequest="32" HeightRequest="32" VerticalOptions="Center">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding CloseDrawerCommand}"/>
+                            </Border.GestureRecognizers>
+                            <Label Text="✕" FontSize="13" TextColor="#64748B" HorizontalOptions="Center" VerticalOptions="Center"/>
                         </Border>
                     </Grid>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
-
-        <!-- 4. BOTTOM INPUT BAR -->
-        <Border Grid.Row="3" BackgroundColor="#1E293B" StrokeThickness="0" Padding="12,10">
-            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" VerticalOptions="Center">
-                
-                <!-- Pick Photo and Video Buttons -->
-                <HorizontalStackLayout Grid.Column="0" Spacing="6" VerticalOptions="Center">
-                    <Button Text="📷" Command="{Binding PickAndSendPhotoCommand}" 
-                            BackgroundColor="#334155" TextColor="White" FontSize="16"
-                            WidthRequest="40" HeightRequest="40" CornerRadius="20" Padding="0"/>
-                    <Button Text="🎥" Command="{Binding PickAndSendVideoCommand}" 
-                            BackgroundColor="#334155" TextColor="White" FontSize="16"
-                            WidthRequest="40" HeightRequest="40" CornerRadius="20" Padding="0"/>
-                </HorizontalStackLayout>
-
-                <!-- Text Input -->
-                <Border Grid.Column="1" BackgroundColor="#0F172A" StrokeShape="RoundRectangle 22" 
-                        Stroke="#334155" StrokeThickness="1" Padding="14,0" HeightRequest="44">
-                    <Entry Text="{Binding MessageInput}" Placeholder="Ketik pesan..." 
-                           PlaceholderColor="#64748B" TextColor="#F8FAFC" FontSize="13"
-                           VerticalOptions="Center" ReturnType="Send" 
-                           ReturnCommand="{Binding SendMessageCommand}"/>
                 </Border>
 
-                <!-- Send Button -->
-                <Button Grid.Column="2" Text="➤" Command="{Binding SendMessageCommand}" 
-                        BackgroundColor="#4F46E5" TextColor="White" FontSize="15"
-                        WidthRequest="44" HeightRequest="44" CornerRadius="22" Padding="0"/>
+                <!-- Profile / Device Name Setting di Panel Kiri -->
+                <Border Grid.Row="1" BackgroundColor="#FFFFFF" StrokeThickness="0,0,0,1" Stroke="#E2E8F0" Padding="14,10">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="{Binding Strings.MyDeviceLabel}" TextColor="#64748B" FontSize="11" FontAttributes="Bold"/>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                            <Border BackgroundColor="#F8FAFC" Stroke="#CBD5E1" StrokeThickness="1" StrokeShape="RoundRectangle 6" Padding="8,0" HeightRequest="34">
+                                <Entry Text="{Binding DeviceName}" TextColor="#0F172A" FontSize="11" VerticalOptions="Center"/>
+                            </Border>
+                            <Button Grid.Column="1" Text="{Binding Strings.Change}" Command="{Binding SaveDeviceNameCommand}"
+                                    BackgroundColor="#4F46E5" TextColor="White" FontSize="11" FontAttributes="Bold" HeightRequest="34" CornerRadius="6" Padding="10,0"/>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- DAFTAR DEVICE (BROADCAST & DEVICE SPESIFIK 1-ON-1) -->
+                <CollectionView Grid.Row="2" ItemsSource="{Binding Manager.Peers}" Margin="8,6">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:DevicePeer">
+                            <Border StrokeShape="RoundRectangle 8" Padding="10,8" Margin="0,2">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:MainChatViewModel}}, Path=SelectPeerCommand}" 
+                                                          CommandParameter="{Binding .}"/>
+                                </Border.GestureRecognizers>
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="BackgroundColor" Value="Transparent"/>
+                                        <Setter Property="Stroke" Value="Transparent"/>
+                                        <Setter Property="StrokeThickness" Value="1"/>
+                                    </Style>
+                                </Border.Style>
+
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" VerticalOptions="Center">
+                                    
+                                    <!-- Device Icon Avatar -->
+                                    <Border Grid.Column="0" WidthRequest="38" HeightRequest="38" StrokeShape="RoundRectangle 19" 
+                                            BackgroundColor="#EEF2FF" Stroke="#C7D2FE" StrokeThickness="1" VerticalOptions="Center">
+                                        <Label FontSize="16" HorizontalOptions="Center" VerticalOptions="Center">
+                                            <Label.Style>
+                                                <Style TargetType="Label">
+                                                    <Setter Property="Text" Value="💻"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger TargetType="Label" Binding="{Binding IsBroadcastTarget}" Value="True">
+                                                            <Setter Property="Text" Value="📢"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Label.Style>
+                                        </Label>
+                                    </Border>
+
+                                    <!-- Name, IP, MAC Address -->
+                                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="1">
+                                        <Label Text="{Binding Name}" FontAttributes="Bold" TextColor="#0F172A" FontSize="12" LineBreakMode="TailTruncation"/>
+                                        <Label Text="{Binding IpAddress, StringFormat='IP: {0}'}" FontSize="10" TextColor="#64748B"/>
+                                        <Label Text="{Binding MacAddress, StringFormat='MAC: {0}'}" FontSize="9" TextColor="#94A3B8"/>
+                                    </VerticalStackLayout>
+
+                                    <!-- Status Online Dot & Bell Unread Counter -->
+                                    <HorizontalStackLayout Grid.Column="2" Spacing="6" VerticalOptions="Center">
+                                        <!-- Unread Count Badge -->
+                                        <Border BackgroundColor="#FEE2E2" Stroke="#FCA5A5" StrokeThickness="1" StrokeShape="RoundRectangle 10" 
+                                                Padding="6,2" IsVisible="{Binding HasUnread}">
+                                            <HorizontalStackLayout Spacing="3" VerticalOptions="Center">
+                                                <Label Text="🔔" FontSize="10" VerticalOptions="Center"/>
+                                                <Label Text="{Binding UnreadCount}" FontSize="10" FontAttributes="Bold" TextColor="#DC2626" VerticalOptions="Center"/>
+                                            </HorizontalStackLayout>
+                                        </Border>
+
+                                        <!-- Online / Offline Dot -->
+                                        <BoxView CornerRadius="4" WidthRequest="8" HeightRequest="8" VerticalOptions="Center">
+                                            <BoxView.Style>
+                                                <Style TargetType="BoxView">
+                                                    <Setter Property="Color" Value="#10B981"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger TargetType="BoxView" Binding="{Binding IsOnline}" Value="False">
+                                                            <Setter Property="Color" Value="#94A3B8"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </BoxView.Style>
+                                        </BoxView>
+                                    </HorizontalStackLayout>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Footer Panel Kiri -->
+                <Border Grid.Row="3" BackgroundColor="#F8FAFC" StrokeThickness="0,1,0,0" Stroke="#E2E8F0" Padding="14,10">
+                    <HorizontalStackLayout Spacing="6" HorizontalOptions="Center" VerticalOptions="Center">
+                        <Label Text="LAN Chat v0.2.3" TextColor="#64748B" FontSize="10" FontAttributes="Bold"/>
+                        <Label Text="•" TextColor="#CBD5E1" FontSize="10"/>
+                        <Label Text="P2P Messenger" TextColor="#94A3B8" FontSize="10"/>
+                    </HorizontalStackLayout>
+                </Border>
             </Grid>
         </Border>
-
     </Grid>
 
 </ContentPage>

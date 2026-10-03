@@ -21,10 +21,10 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-		<ApplicationTitle>LanChat.Maui</ApplicationTitle>
+		<ApplicationTitle>LAN Chat</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.lanchat.maui</ApplicationId>
+		<ApplicationId>com.lanchat.app</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>0.2.3</ApplicationDisplayVersion>
@@ -46,10 +46,10 @@
 
 	<ItemGroup>
 		<!-- App Icon -->
-		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.png" Color="#FFFFFF" />
 
 		<!-- Splash Screen -->
-		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
+		<MauiSplashScreen Include="Resources\Splash\splash.png" Color="#FFFFFF" BaseSize="128,128" />
 
 		<!-- Images -->
 		<MauiImage Include="Resources\Images\*" />

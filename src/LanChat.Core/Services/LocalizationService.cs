@@ -57,7 +57,7 @@ public partial class LocalizationService : ObservableObject
         : "LAN Chat v0.2.3 - Messenger Lokal Lintas Platform";
 
     public string SubTitle => "Direct & Broadcast P2P (Wi-Fi / LAN)";
-    public string MyDevice => IsEnglish ? "Device Saya:" : "Device Saya:";
+    public string MyDevice => IsEnglish ? "My Device:" : "Device Saya:";
     public string MyDeviceLabel => IsEnglish ? "My Device:" : "Device Saya:";
     public string Change => IsEnglish ? "Change" : "Ubah";
     public string SaveDeviceTooltip => IsEnglish ? "Save device name to settings" : "Simpan nama device ke settings";
@@ -70,11 +70,14 @@ public partial class LocalizationService : ObservableObject
     public string DevicesOnLanSub => IsEnglish ? "Select chat target (Broadcast or Direct 1-on-1)" : "Pilih tujuan chat (Broadcast atau Direct 1-on-1)";
     public string AllDevicesBroadcast => IsEnglish ? "All Devices (Broadcast)" : "Semua Device (Broadcast)";
     public string AllDevicesDisplayName => IsEnglish ? "📢 All Devices (Broadcast)" : "📢 Semua Device (Broadcast)";
+    public string AllDevices => IsEnglish ? "All Devices" : "Semua Device";
 
     // Chat Header & Badges
     public string ChatRoom => IsEnglish ? "Chat Room: " : "Ruang Chat: ";
     public string ModeBroadcast => IsEnglish ? "BROADCAST MODE" : "MODE BROADCAST";
     public string ChatDirect => IsEnglish ? "DIRECT CHAT" : "CHAT DIRECT";
+    public string ModeBroadcastBadge => IsEnglish ? "📢 Public (All Devices)" : "📢 Publik (Semua Device)";
+    public string ModePrivateBadge => IsEnglish ? "🔒 Private Chat (1-on-1)" : "🔒 Chat Privat (1-on-1)";
     public string BroadcastBadge => "Broadcast";
     public string DirectBadge => "Direct";
     public string You => IsEnglish ? "You" : "Anda";
@@ -95,6 +98,8 @@ public partial class LocalizationService : ObservableObject
     public string SendTooltip => IsEnglish ? "Send Message (Enter)" : "Kirim Pesan (Enter)";
     public string AttachImageTooltip => IsEnglish ? "Send Photo / Image" : "Kirim Foto / Gambar";
     public string AttachVideoTooltip => IsEnglish ? "Send Video (Max 250 MB)" : "Kirim Video (Maks 250 MB)";
+    public string Photo => IsEnglish ? "Photo" : "Foto";
+    public string Video => "Video";
 
     // Statuses
     public string Online => "Online";

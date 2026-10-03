@@ -29,6 +29,10 @@ public partial class MainWindowViewModel : ObservableObject
 
     public ICollectionView MessagesView => _filteredMessagesView;
 
+    public string CurrentChatModeBadgeText => SelectedTarget?.IsBroadcastTarget == true
+        ? Strings.ModeBroadcastBadge
+        : Strings.ModePrivateBadge;
+
     public MainWindowViewModel()
     {
         Manager = new LanChatManager();
@@ -42,6 +46,7 @@ public partial class MainWindowViewModel : ObservableObject
             if (e.PropertyName == nameof(Manager.SelectedTarget))
             {
                 OnPropertyChanged(nameof(SelectedTarget));
+                OnPropertyChanged(nameof(CurrentChatModeBadgeText));
                 _filteredMessagesView.Refresh();
             }
         };
@@ -56,6 +61,14 @@ public partial class MainWindowViewModel : ObservableObject
         Strings.PropertyChanged += (s, e) =>
         {
             OnPropertyChanged(nameof(Strings));
+            OnPropertyChanged(nameof(CurrentChatModeBadgeText));
+            foreach (var msg in Manager.Messages)
+            {
+                if (msg.IsImage || msg.IsVideo)
+                {
+                    msg.UpdateMediaState();
+                }
+            }
             _filteredMessagesView.Refresh();
         };
 
@@ -84,6 +97,7 @@ public partial class MainWindowViewModel : ObservableObject
                 }
 
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(CurrentChatModeBadgeText));
                 _filteredMessagesView.Refresh();
             }
         }
@@ -139,6 +153,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         Strings.ToggleLanguage();
         OnPropertyChanged(nameof(Strings));
+        OnPropertyChanged(nameof(CurrentChatModeBadgeText));
         _filteredMessagesView.Refresh();
     }
 
@@ -147,6 +162,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         Strings.SetLanguage("id");
         OnPropertyChanged(nameof(Strings));
+        OnPropertyChanged(nameof(CurrentChatModeBadgeText));
         _filteredMessagesView.Refresh();
     }
 
@@ -155,6 +171,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         Strings.SetLanguage("en");
         OnPropertyChanged(nameof(Strings));
+        OnPropertyChanged(nameof(CurrentChatModeBadgeText));
         _filteredMessagesView.Refresh();
     }
 

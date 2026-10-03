@@ -23,6 +23,9 @@
 
   <ItemGroup>
     <Resource Include="Resources\app_logo.png" />
+    <None Update="config.ini">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

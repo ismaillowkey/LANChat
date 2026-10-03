@@ -66,7 +66,16 @@ Section "LAN Chat Core Files" SecMain
         StrCpy $0 "id"
     ${EndIf}
 
-    ; Write initial install_config.json so the app defaults to the chosen installer language
+    ; Write config.ini in Application Directory
+    WriteINIStr "$INSTDIR\config.ini" "General" "Language" "$0"
+    WriteINIStr "$INSTDIR\config.ini" "General" "DeviceName" ""
+
+    ; Also write config.ini in user AppData directory so user session immediately matches installer choice
+    SetShellVarContext current
+    CreateDirectory "$APPDATA\LanChat"
+    WriteINIStr "$APPDATA\LanChat\config.ini" "General" "Language" "$0"
+
+    ; Also write legacy install_config.json for backward compatibility
     FileOpen $1 "$INSTDIR\install_config.json" w
     FileWrite $1 '{"Language":"$0"}'
     FileClose $1
@@ -113,6 +122,7 @@ Section "Uninstall"
     DeleteRegKey HKLM "Software\${APP_NAME}"
     
     ; Remove installed files & directory
+    Delete "$INSTDIR\config.ini"
     Delete "$INSTDIR\install_config.json"
     RMDir /r "$INSTDIR"
 SectionEnd

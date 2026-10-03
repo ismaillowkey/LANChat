@@ -493,14 +493,12 @@
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
-                            <TextBlock FontSize="11" FontWeight="SemiBold">
+                            <TextBlock Text="{Binding CurrentChatModeBadgeText}" FontSize="11" FontWeight="SemiBold">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="🔒 Chat Privat (1-on-1)"/>
                                         <Setter Property="Foreground" Value="#9D174D"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SelectedTarget.IsBroadcastTarget}" Value="True">
-                                                <Setter Property="Text" Value="📢 Publik (Semua Device)"/>
                                                 <Setter Property="Foreground" Value="#1E40AF"/>
                                             </DataTrigger>
                                         </Style.Triggers>
@@ -721,12 +719,15 @@
 
                                                     <!-- Action Buttons -->
                                                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
-                                                        <Button Content="▶ Putar" Style="{StaticResource ModernButton}" Padding="10,5" FontSize="11" Margin="0,0,6,0"
+                                                        <Button Content="{Binding DataContext.Strings.PlayVideo, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                                Style="{StaticResource ModernButton}" Padding="10,5" FontSize="11" Margin="0,0,6,0"
                                                                 Command="{Binding DataContext.PlayMediaCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                CommandParameter="{Binding}" ToolTip="Putar video"/>
+                                                                CommandParameter="{Binding}" 
+                                                                ToolTip="{Binding DataContext.Strings.PlayVideoTooltip, RelativeSource={RelativeSource AncestorType=Window}}"/>
                                                         <Button Content="📂" Style="{StaticResource IconButton}" Padding="8,5" FontSize="11"
                                                                 Command="{Binding DataContext.OpenMediaFolderCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                CommandParameter="{Binding}" ToolTip="Buka folder video"/>
+                                                                CommandParameter="{Binding}" 
+                                                                ToolTip="{Binding DataContext.Strings.OpenVideoFolderTooltip, RelativeSource={RelativeSource AncestorType=Window}}"/>
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>
@@ -768,7 +769,7 @@
                             <Button Command="{Binding AttachImageCommand}" Style="{StaticResource IconButton}" Margin="0,0,6,0" ToolTip="{Binding Strings.AttachImageTooltip}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="📷" FontSize="15" Margin="0,0,5,0"/>
-                                    <TextBlock Text="Foto" FontSize="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Strings.Photo}" FontSize="12" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
 
@@ -776,7 +777,7 @@
                             <Button Command="{Binding AttachVideoCommand}" Style="{StaticResource IconButton}" ToolTip="{Binding Strings.AttachVideoTooltip}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="🎥" FontSize="15" Margin="0,0,5,0"/>
-                                    <TextBlock Text="Video" FontSize="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Strings.Video}" FontSize="12" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>

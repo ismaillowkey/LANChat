@@ -41,6 +41,10 @@ public static class StoragePaths
         }
     }
 
+    public static string IniConfigFilePath => Path.Combine(AppDataDirectory, "config.ini");
+
+    public static string AppDirIniConfigFilePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.ini");
+
     public static string SettingsFilePath => Path.Combine(AppDataDirectory, "settings.json");
 
     public static string ChatHistoryFilePath => Path.Combine(AppDataDirectory, "chat_history.json");

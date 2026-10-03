@@ -8,8 +8,13 @@ public partial class DevicePeer : ObservableObject
 
     public string Id { get; set; } = string.Empty;
 
-    [ObservableProperty]
     private string _name = string.Empty;
+
+    public string Name
+    {
+        get => IsBroadcastTarget ? Services.LocalizationService.Instance.AllDevicesBroadcast : _name;
+        set => SetProperty(ref _name, value);
+    }
 
     [ObservableProperty]
     private string _ipAddress = string.Empty;
@@ -36,12 +41,24 @@ public partial class DevicePeer : ObservableObject
 
     public string DisplayName => IsBroadcastTarget ? Services.LocalizationService.Instance.AllDevicesDisplayName : $"{Name} ({IpAddress})";
 
+    public DevicePeer()
+    {
+        Services.LocalizationService.Instance.PropertyChanged += (s, e) =>
+        {
+            if (IsBroadcastTarget)
+            {
+                OnPropertyChanged(nameof(Name));
+                OnPropertyChanged(nameof(DisplayName));
+            }
+        };
+    }
+
     public static DevicePeer CreateBroadcastTarget()
     {
         return new DevicePeer
         {
             Id = BroadcastTargetId,
-            Name = "Semua Device (Broadcast)",
+            _name = Services.LocalizationService.Instance.AllDevicesBroadcast,
             IpAddress = "255.255.255.255",
             TcpPort = 0,
             IsOnline = true
