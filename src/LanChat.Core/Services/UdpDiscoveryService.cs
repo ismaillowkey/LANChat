@@ -118,16 +118,18 @@ public class UdpDiscoveryService : IDisposable
                 if (beacon == null || beacon.DeviceId == LocalDeviceId)
                     continue;
 
-                var senderIp = result.RemoteEndPoint.Address.ToString();
+                var remoteIp = result.RemoteEndPoint.Address;
+                if (remoteIp.IsIPv4MappedToIPv6)
+                {
+                    remoteIp = remoteIp.MapToIPv4();
+                }
+                var senderIp = remoteIp.ToString();
+
                 var localIps = NetworkUtils.GetLocalIPv4Addresses();
                 bool isSameMachine = localIps.Any(ip => ip.ToString() == senderIp) || senderIp == "127.0.0.1";
                 if (isSameMachine)
                 {
                     senderIp = "127.0.0.1";
-                }
-                else if (!string.IsNullOrEmpty(beacon.SenderIp))
-                {
-                    senderIp = beacon.SenderIp;
                 }
 
                 if (beacon.Action == "BYE")

@@ -136,23 +136,27 @@ public class TcpChatTransport : IDisposable
         }
     }
 
-    public async Task<bool> SendPacketAsync(string targetIp, int targetPort, TransportPacket packet, int timeoutMs = 4000)
+    public async Task<bool> SendPacketAsync(string targetIp, int targetPort, TransportPacket packet, int connectTimeoutMs = 6000)
     {
         try
         {
             using var client = new TcpClient();
             var connectTask = client.ConnectAsync(IPAddress.Parse(targetIp), targetPort);
-            if (await Task.WhenAny(connectTask, Task.Delay(timeoutMs)) != connectTask)
+            if (await Task.WhenAny(connectTask, Task.Delay(connectTimeoutMs)) != connectTask)
             {
+                System.Diagnostics.Debug.WriteLine($"TCP connect to {targetIp}:{targetPort} timed out ({connectTimeoutMs}ms)");
                 return false;
             }
             await connectTask;
 
-            using var stream = client.GetStream();
-            using var cts = new CancellationTokenSource(timeoutMs);
-
             var json = JsonSerializer.Serialize(packet);
             var payloadBytes = Encoding.UTF8.GetBytes(json);
+
+            // Generous timeout for payload transfer (at least 30s for media, or calculated based on size)
+            int transferTimeoutMs = packet.Type == MessageType.Text ? 15000 : Math.Max(45000, (payloadBytes.Length / (20 * 1024)) * 1000);
+            using var cts = new CancellationTokenSource(transferTimeoutMs);
+
+            using var stream = client.GetStream();
 
             var lengthBuffer = new byte[4];
             BinaryPrimitives.WriteInt32BigEndian(lengthBuffer, payloadBytes.Length);

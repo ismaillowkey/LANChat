@@ -45,10 +45,16 @@ public class AndroidNotificationService : INotificationService
             var pendingIntent = PendingIntent.GetActivity(context, 0, intent,
                 PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable);
 
+            int smallIconRes = global::Android.Resource.Drawable.StatNotifyChat;
+            if (smallIconRes == 0)
+            {
+                smallIconRes = global::Android.Resource.Drawable.IcDialogInfo;
+            }
+
             var builder = new NotificationCompat.Builder(context, ChannelId)
                 .SetContentTitle(title)
                 .SetContentText(message)
-                .SetSmallIcon(Resource.Mipmap.appicon)
+                .SetSmallIcon(smallIconRes)
                 .SetAutoCancel(true)
                 .SetPriority(NotificationCompat.PriorityHigh)
                 .SetDefaults((int)(NotificationDefaults.Sound | NotificationDefaults.Vibrate))

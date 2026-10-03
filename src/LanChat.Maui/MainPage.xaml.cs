@@ -83,10 +83,20 @@ public partial class MainPage : ContentPage
 		}
 	}
 
+	protected override bool OnBackButtonPressed()
+	{
+		if (LeftPanel.IsVisible)
+		{
+			_ = CloseDrawerAsync();
+			return true; // Handled back press to dismiss drawer
+		}
+		return base.OnBackButtonPressed();
+	}
+
 	protected override void OnDisappearing()
 	{
 		base.OnDisappearing();
-		KeyboardHelper.KeyboardHeightChanged -= OnKeyboardHeightChanged;
-		_viewModel.Manager.Dispose();
+		// Note: Do NOT dispose _viewModel.Manager here because OnDisappearing fires
+		// when launching the system photo picker or camera activity!
 	}
 }

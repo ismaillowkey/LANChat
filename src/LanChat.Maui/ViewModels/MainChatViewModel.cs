@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LanChat.Core.Models;
 using LanChat.Core.Services;
+using LanChat.Maui.Services;
 
 namespace LanChat.Maui.ViewModels;
 
@@ -256,13 +257,40 @@ public partial class MainChatViewModel : ObservableObject
 
         try
         {
-            var result = await MediaPicker.Default.PickPhotoAsync();
+            FileResult? result = null;
+            try
+            {
+                result = await MediaPicker.Default.PickPhotoAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"MediaPicker failed ({ex.Message}), trying FilePicker fallback...");
+                try
+                {
+                    result = await FilePicker.Default.PickAsync(new PickOptions
+                    {
+                        PickerTitle = Strings.PickImageTitle,
+                        FileTypes = FilePickerFileType.Images
+                    });
+                }
+                catch { }
+            }
+
             if (result != null)
             {
                 using var stream = await result.OpenReadAsync();
                 using var memoryStream = new MemoryStream();
                 await stream.CopyToAsync(memoryStream);
-                var bytes = memoryStream.ToArray();
+                var rawBytes = memoryStream.ToArray();
+
+                if (rawBytes.Length == 0)
+                {
+                    await Shell.Current.DisplayAlert(Strings.WarningTitle, "File gambar kosong atau tidak dapat diakses", "OK");
+                    return;
+                }
+
+                // Compress / resize photo for instant and reliable chat transfer
+                var bytes = ImageCompressor.CompressImage(rawBytes);
 
                 string? caption = null;
                 if (!string.IsNullOrWhiteSpace(MessageInput))
@@ -271,13 +299,17 @@ public partial class MainChatViewModel : ObservableObject
                     MessageInput = string.Empty;
                 }
 
-                await Manager.SendImageMessageAsync(result.FileName, bytes, caption);
+                bool success = await Manager.SendImageMessageAsync(result.FileName, bytes, caption);
+                if (!success && currentTarget != null && !currentTarget.IsBroadcastTarget)
+                {
+                    await Shell.Current.DisplayAlert(Strings.WarningTitle, Strings.FormatSendFailed(currentTarget.Name), "OK");
+                }
                 ApplyFilter();
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error picking photo: {ex.Message}");
+            await Shell.Current.DisplayAlert(Strings.WarningTitle, $"{Strings.ErrorTitle}: {ex.Message}", "OK");
         }
     }
 
@@ -293,7 +325,25 @@ public partial class MainChatViewModel : ObservableObject
 
         try
         {
-            var result = await MediaPicker.Default.PickVideoAsync();
+            FileResult? result = null;
+            try
+            {
+                result = await MediaPicker.Default.PickVideoAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"MediaPicker failed ({ex.Message}), trying FilePicker fallback...");
+                try
+                {
+                    result = await FilePicker.Default.PickAsync(new PickOptions
+                    {
+                        PickerTitle = Strings.Video,
+                        FileTypes = FilePickerFileType.Videos
+                    });
+                }
+                catch { }
+            }
+
             if (result != null)
             {
                 var fileInfo = new FileInfo(result.FullPath);
@@ -308,6 +358,12 @@ public partial class MainChatViewModel : ObservableObject
                 await stream.CopyToAsync(memoryStream);
                 var bytes = memoryStream.ToArray();
 
+                if (bytes.Length == 0)
+                {
+                    await Shell.Current.DisplayAlert(Strings.WarningTitle, "File video kosong atau tidak dapat diakses", "OK");
+                    return;
+                }
+
                 string? caption = null;
                 if (!string.IsNullOrWhiteSpace(MessageInput))
                 {
@@ -315,13 +371,17 @@ public partial class MainChatViewModel : ObservableObject
                     MessageInput = string.Empty;
                 }
 
-                await Manager.SendVideoMessageAsync(result.FileName, bytes, caption);
+                bool success = await Manager.SendVideoMessageAsync(result.FileName, bytes, caption);
+                if (!success && currentTarget != null && !currentTarget.IsBroadcastTarget)
+                {
+                    await Shell.Current.DisplayAlert(Strings.WarningTitle, Strings.FormatSendFailed(currentTarget.Name), "OK");
+                }
                 ApplyFilter();
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error picking video: {ex.Message}");
+            await Shell.Current.DisplayAlert(Strings.WarningTitle, $"{Strings.ErrorTitle}: {ex.Message}", "OK");
         }
     }
 
