@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace LanChat.Core.Models;
@@ -38,15 +40,46 @@ public partial class ChatMessage : ObservableObject
     [ObservableProperty]
     private bool _isOutgoing;
 
+    [ObservableProperty]
+    private bool _isMediaDeleted;
+
+    [ObservableProperty]
+    private bool _hasImagePreview;
+
     public bool IsDirect => TargetId != DevicePeer.BroadcastTargetId;
 
     public bool IsImage => Type == MessageType.Image;
 
     public bool IsVideo => Type == MessageType.Video;
 
+    public bool IsMissingImage => IsImage && (IsMediaDeleted || !HasImagePreview);
+
+    public bool IsMissingVideo => IsVideo && IsMediaDeleted;
+
     public bool HasMediaFile => !string.IsNullOrEmpty(LocalFilePath) || ImageData != null;
 
     public string FormattedTime => Timestamp.ToString("HH:mm");
+
+    public string MissingMediaNotice
+    {
+        get
+        {
+            var isEn = Services.LocalizationService.Instance.IsEnglish;
+            var sender = IsOutgoing 
+                ? (isEn ? "You" : "Anda") 
+                : (string.IsNullOrWhiteSpace(SenderName) ? (isEn ? "User" : "Pengguna") : SenderName);
+
+            if (Type == MessageType.Image)
+            {
+                return isEn ? $"{sender} sent an image" : $"{sender} mengirim gambar";
+            }
+            else if (Type == MessageType.Video)
+            {
+                return isEn ? $"{sender} sent a video" : $"{sender} mengirim video";
+            }
+            return isEn ? $"{sender} sent a file" : $"{sender} mengirim file";
+        }
+    }
 
     public string FormattedFileSize
     {
@@ -60,5 +93,50 @@ public partial class ChatMessage : ObservableObject
             if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
             return $"{bytes / (1024.0 * 1024.0):F1} MB";
         }
+    }
+
+    public void UpdateMediaState()
+    {
+        if (Type == MessageType.Image)
+        {
+            bool fileExists = !string.IsNullOrEmpty(LocalFilePath) && File.Exists(LocalFilePath);
+            if (fileExists)
+            {
+                IsMediaDeleted = false;
+                if (ImageData == null)
+                {
+                    try
+                    {
+                        ImageData = File.ReadAllBytes(LocalFilePath!);
+                    }
+                    catch
+                    {
+                        IsMediaDeleted = true;
+                        ImageData = null;
+                    }
+                }
+                HasImagePreview = ImageData != null;
+            }
+            else
+            {
+                IsMediaDeleted = true;
+                HasImagePreview = false;
+                ImageData = null;
+            }
+        }
+        else if (Type == MessageType.Video)
+        {
+            bool fileExists = !string.IsNullOrEmpty(LocalFilePath) && File.Exists(LocalFilePath);
+            IsMediaDeleted = !fileExists;
+        }
+        else
+        {
+            IsMediaDeleted = false;
+            HasImagePreview = false;
+        }
+
+        OnPropertyChanged(nameof(IsMissingImage));
+        OnPropertyChanged(nameof(IsMissingVideo));
+        OnPropertyChanged(nameof(MissingMediaNotice));
     }
 }

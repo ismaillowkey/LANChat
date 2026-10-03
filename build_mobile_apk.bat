@@ -11,7 +11,7 @@ echo.
 
 if not exist publish\Mobile mkdir publish\Mobile
 
-dotnet publish src\LanChat.Maui\LanChat.Maui.csproj -f net9.0-android -c Release -p:AndroidPackageFormat=apk -o publish\Mobile
+dotnet publish src\LanChat.Maui\LanChat.Maui.csproj -f net10.0-android -c Release -p:AndroidPackageFormat=apk -o publish\Mobile
 
 if %ERRORLEVEL% NEQ 0 (
     echo.

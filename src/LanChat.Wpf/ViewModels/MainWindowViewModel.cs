@@ -1,6 +1,9 @@
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Data;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -13,6 +16,8 @@ namespace LanChat.Wpf.ViewModels;
 public partial class MainWindowViewModel : ObservableObject
 {
     public LanChatManager Manager { get; }
+
+    public LocalizationService Strings => LocalizationService.Instance;
 
     [ObservableProperty]
     private string _messageInput = string.Empty;
@@ -48,6 +53,12 @@ public partial class MainWindowViewModel : ObservableObject
 
         Manager.MessageReceived += OnIncomingMessage;
 
+        Strings.PropertyChanged += (s, e) =>
+        {
+            OnPropertyChanged(nameof(Strings));
+            _filteredMessagesView.Refresh();
+        };
+
         Manager.Start();
     }
 
@@ -62,6 +73,15 @@ public partial class MainWindowViewModel : ObservableObject
                 // Clear unread bell when clicking into this chat
                 value.HasUnread = false;
                 value.UnreadCount = 0;
+
+                // Refresh media states for current items in view
+                foreach (var item in Manager.Messages)
+                {
+                    if (item.IsImage || item.IsVideo)
+                    {
+                        item.UpdateMediaState();
+                    }
+                }
 
                 OnPropertyChanged();
                 _filteredMessagesView.Refresh();
@@ -115,24 +135,67 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void ToggleLanguage()
+    {
+        Strings.ToggleLanguage();
+        OnPropertyChanged(nameof(Strings));
+        _filteredMessagesView.Refresh();
+    }
+
+    [RelayCommand]
+    private void SetIndonesian()
+    {
+        Strings.SetLanguage("id");
+        OnPropertyChanged(nameof(Strings));
+        _filteredMessagesView.Refresh();
+    }
+
+    [RelayCommand]
+    private void SetEnglish()
+    {
+        Strings.SetLanguage("en");
+        OnPropertyChanged(nameof(Strings));
+        _filteredMessagesView.Refresh();
+    }
+
+    [RelayCommand]
     private async Task SendMessageAsync()
     {
         if (string.IsNullOrWhiteSpace(MessageInput)) return;
 
+        var currentTarget = SelectedTarget;
+        if (currentTarget != null && !currentTarget.IsBroadcastTarget && !currentTarget.IsOnline)
+        {
+            System.Windows.MessageBox.Show(Strings.FormatPeerOffline(currentTarget.Name), Strings.WarningTitle, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
         var text = MessageInput.Trim();
         MessageInput = string.Empty;
 
-        await Manager.SendTextMessageAsync(text);
+        bool success = await Manager.SendTextMessageAsync(text);
+        if (!success && currentTarget != null && !currentTarget.IsBroadcastTarget)
+        {
+            System.Windows.MessageBox.Show(Strings.FormatSendFailed(currentTarget.Name), Strings.WarningTitle, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+        }
+
         _filteredMessagesView.Refresh();
     }
 
     [RelayCommand]
     private async Task AttachImageAsync()
     {
+        var currentTarget = SelectedTarget;
+        if (currentTarget != null && !currentTarget.IsBroadcastTarget && !currentTarget.IsOnline)
+        {
+            System.Windows.MessageBox.Show(Strings.FormatPeerOffline(currentTarget.Name), Strings.WarningTitle, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
         var dialog = new OpenFileDialog
         {
             Filter = "Image Files (*.png;*.jpg;*.jpeg;*.gif;*.webp;*.bmp)|*.png;*.jpg;*.jpeg;*.gif;*.webp;*.bmp|All Files (*.*)|*.*",
-            Title = "Pilih Gambar untuk Dikirim"
+            Title = Strings.PickImageTitle
         };
 
         if (dialog.ShowDialog() == true)
@@ -154,7 +217,7 @@ public partial class MainWindowViewModel : ObservableObject
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Gagal mengirim gambar: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                System.Windows.MessageBox.Show(string.Format(Strings.ErrorTitle + ": {0}", ex.Message), Strings.ErrorTitle, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
     }
@@ -162,10 +225,17 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private async Task AttachVideoAsync()
     {
+        var currentTarget = SelectedTarget;
+        if (currentTarget != null && !currentTarget.IsBroadcastTarget && !currentTarget.IsOnline)
+        {
+            System.Windows.MessageBox.Show(Strings.FormatPeerOffline(currentTarget.Name), Strings.WarningTitle, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
         var dialog = new OpenFileDialog
         {
             Filter = "Video Files (*.mp4;*.mkv;*.avi;*.mov;*.wmv;*.webm;*.flv;*.m4v)|*.mp4;*.mkv;*.avi;*.mov;*.wmv;*.webm;*.flv;*.m4v|All Files (*.*)|*.*",
-            Title = "Pilih Video untuk Dikirim"
+            Title = Strings.PickVideoTitle
         };
 
         if (dialog.ShowDialog() == true)
@@ -175,7 +245,7 @@ public partial class MainWindowViewModel : ObservableObject
                 var fileInfo = new FileInfo(dialog.FileName);
                 if (fileInfo.Length > 250 * 1024 * 1024)
                 {
-                    System.Windows.MessageBox.Show("Ukuran video melebihi batas 250 MB.", "File Terlalu Besar", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                    System.Windows.MessageBox.Show(Strings.VideoTooLarge, Strings.VideoTooLargeTitle, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                     return;
                 }
 
@@ -194,7 +264,7 @@ public partial class MainWindowViewModel : ObservableObject
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Gagal mengirim video: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                System.Windows.MessageBox.Show(string.Format(Strings.ErrorTitle + ": {0}", ex.Message), Strings.ErrorTitle, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
     }
@@ -203,42 +273,73 @@ public partial class MainWindowViewModel : ObservableObject
     private void PlayMedia(ChatMessage? msg)
     {
         if (msg == null) return;
+        msg.UpdateMediaState();
+
+        if (msg.IsMediaDeleted || string.IsNullOrEmpty(msg.LocalFilePath) || !File.Exists(msg.LocalFilePath))
+        {
+            System.Windows.MessageBox.Show(Strings.MediaNotFound, Strings.MediaNotFoundTitle, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            _filteredMessagesView.Refresh();
+            return;
+        }
+
         try
         {
-            if (!string.IsNullOrEmpty(msg.LocalFilePath) && File.Exists(msg.LocalFilePath))
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(msg.LocalFilePath)
             {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(msg.LocalFilePath)
-                {
-                    UseShellExecute = true
-                });
-            }
-            else
-            {
-                System.Windows.MessageBox.Show("File media tidak ditemukan di penyimpanan lokal.", "Perhatian", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
-            }
+                UseShellExecute = true
+            });
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"Gagal membuka file media: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            System.Windows.MessageBox.Show(string.Format(Strings.ErrorTitle + ": {0}", ex.Message), Strings.ErrorTitle, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         }
     }
 
     [RelayCommand]
     private void OpenMediaFolder(ChatMessage? msg)
     {
-        if (msg == null) return;
         try
         {
-            if (!string.IsNullOrEmpty(msg.LocalFilePath) && File.Exists(msg.LocalFilePath))
+            if (msg != null && !string.IsNullOrEmpty(msg.LocalFilePath) && File.Exists(msg.LocalFilePath))
             {
                 System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{msg.LocalFilePath}\"");
             }
-            else if (Directory.Exists(MediaStorageService.MediaDirectory))
+            else if (Directory.Exists(StoragePaths.MediaDirectory))
             {
-                System.Diagnostics.Process.Start("explorer.exe", MediaStorageService.MediaDirectory);
+                System.Diagnostics.Process.Start("explorer.exe", StoragePaths.MediaDirectory);
             }
         }
         catch { }
+    }
+
+    [RelayCommand]
+    private void OpenAppMediaFolder()
+    {
+        try
+        {
+            if (!Directory.Exists(StoragePaths.MediaDirectory))
+            {
+                Directory.CreateDirectory(StoragePaths.MediaDirectory);
+            }
+            System.Diagnostics.Process.Start("explorer.exe", StoragePaths.MediaDirectory);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(string.Format(Strings.ErrorTitle + ": {0}", ex.Message), Strings.ErrorTitle, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    [RelayCommand]
+    private void RefreshMediaState()
+    {
+        foreach (var msg in Manager.Messages)
+        {
+            if (msg.IsImage || msg.IsVideo)
+            {
+                msg.UpdateMediaState();
+            }
+        }
+        _filteredMessagesView.Refresh();
     }
 
     [RelayCommand]

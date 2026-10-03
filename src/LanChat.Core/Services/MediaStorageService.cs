@@ -1,20 +1,17 @@
+using System;
+using System.IO;
+
 namespace LanChat.Core.Services;
 
 public static class MediaStorageService
 {
-    public static string MediaDirectory => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LanChat", "Media");
+    public static string MediaDirectory => StoragePaths.MediaDirectory;
 
     public static string SaveMedia(string originalFileName, byte[] data)
     {
         try
         {
             var dir = MediaDirectory;
-            if (!Directory.Exists(dir))
-            {
-                Directory.CreateDirectory(dir);
-            }
-
             var safeName = Path.GetFileName(originalFileName);
             if (string.IsNullOrWhiteSpace(safeName))
             {

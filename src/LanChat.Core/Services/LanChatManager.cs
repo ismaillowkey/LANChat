@@ -54,10 +54,58 @@ public partial class LanChatManager : ObservableObject, IDisposable
         Peers.Add(broadcastTarget);
         _selectedTarget = broadcastTarget;
 
+        // Load chat history from local disk
+        var history = ChatHistoryService.LoadHistory();
+        foreach (var msg in history)
+        {
+            Messages.Add(msg);
+        }
+        RestorePeersFromHistory(history);
+
         _discoveryService.PeerDiscovered += OnPeerDiscovered;
         _discoveryService.PeerUpdated += OnPeerUpdated;
         _discoveryService.PeerLost += OnPeerLost;
         _transportService.MessageReceived += OnIncomingMessage;
+    }
+
+    private void RestorePeersFromHistory(List<ChatMessage> history)
+    {
+        var knownDirectPeers = new Dictionary<string, string>(); // Id -> Name
+
+        foreach (var msg in history)
+        {
+            if (!msg.IsDirect) continue;
+
+            if (msg.IsOutgoing)
+            {
+                if (!string.IsNullOrEmpty(msg.TargetId) && msg.TargetId != DevicePeer.BroadcastTargetId)
+                {
+                    knownDirectPeers[msg.TargetId] = string.IsNullOrWhiteSpace(msg.TargetName) ? "Device" : msg.TargetName;
+                }
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(msg.SenderId) && msg.SenderId != LocalDeviceId)
+                {
+                    knownDirectPeers[msg.SenderId] = string.IsNullOrWhiteSpace(msg.SenderName) ? "Device" : msg.SenderName;
+                }
+            }
+        }
+
+        foreach (var kvp in knownDirectPeers)
+        {
+            if (Peers.All(p => p.Id != kvp.Key))
+            {
+                Peers.Add(new DevicePeer
+                {
+                    Id = kvp.Key,
+                    Name = kvp.Value,
+                    IpAddress = "Offline",
+                    MacAddress = "-",
+                    IsOnline = false
+                });
+            }
+        }
     }
 
     public void Start()
@@ -145,7 +193,6 @@ public partial class LanChatManager : ObservableObject, IDisposable
             if (existing != null && !existing.IsBroadcastTarget)
             {
                 existing.IsOnline = false;
-                Peers.Remove(existing);
             }
         });
     }
@@ -153,6 +200,9 @@ public partial class LanChatManager : ObservableObject, IDisposable
     private void OnIncomingMessage(ChatMessage msg)
     {
         if (msg.SenderId == LocalDeviceId) return;
+
+        msg.UpdateMediaState();
+        ChatHistoryService.AppendMessage(msg);
 
         RunOnUI(() =>
         {
@@ -194,6 +244,7 @@ public partial class LanChatManager : ObservableObject, IDisposable
 
         if (success)
         {
+            ChatHistoryService.AppendMessage(msg);
             RunOnUI(() => Messages.Add(msg));
         }
 
@@ -223,6 +274,8 @@ public partial class LanChatManager : ObservableObject, IDisposable
             Timestamp = DateTime.Now
         };
 
+        msg.UpdateMediaState();
+
         var packet = new TransportPacket
         {
             MessageId = msg.Id,
@@ -242,6 +295,7 @@ public partial class LanChatManager : ObservableObject, IDisposable
 
         if (success)
         {
+            ChatHistoryService.AppendMessage(msg);
             RunOnUI(() => Messages.Add(msg));
         }
 
@@ -270,6 +324,8 @@ public partial class LanChatManager : ObservableObject, IDisposable
             Timestamp = DateTime.Now
         };
 
+        msg.UpdateMediaState();
+
         var packet = new TransportPacket
         {
             MessageId = msg.Id,
@@ -289,6 +345,7 @@ public partial class LanChatManager : ObservableObject, IDisposable
 
         if (success)
         {
+            ChatHistoryService.AppendMessage(msg);
             RunOnUI(() => Messages.Add(msg));
         }
 
@@ -314,6 +371,11 @@ public partial class LanChatManager : ObservableObject, IDisposable
         else
         {
             // Direct message to specific device
+            if (!target.IsOnline)
+            {
+                // Target is currently marked offline
+                return false;
+            }
             return await _transportService.SendPacketAsync(target.IpAddress, target.TcpPort, packet);
         }
     }

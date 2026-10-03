@@ -133,10 +133,18 @@
                                     <Label Grid.Column="1" Text="{Binding FormattedTime}" FontSize="10" TextColor="#94A3B8" VerticalOptions="Center"/>
                                 </Grid>
 
-                                <!-- Image attachment (If any) -->
-                                <Border StrokeShape="RoundRectangle 8" IsVisible="{Binding IsImage}" Margin="0,4">
+                                <!-- Image attachment (If file exists on disk) -->
+                                <Border StrokeShape="RoundRectangle 8" IsVisible="{Binding HasImagePreview}" Margin="0,4">
                                     <Image Source="{Binding ImageData, Converter={StaticResource ByteArrayToImageSourceConverter}}" 
                                            Aspect="AspectFit" MaximumHeightRequest="240" />
+                                </Border>
+
+                                <!-- Missing image fallback (WhatsApp style when image file is deleted) -->
+                                <Border StrokeShape="RoundRectangle 8" IsVisible="{Binding IsMissingImage}" Margin="0,4" Padding="10,8" BackgroundColor="#1E293B">
+                                    <VerticalStackLayout Spacing="2">
+                                        <Label Text="{Binding MissingMediaNotice}" FontAttributes="Bold" FontSize="12" TextColor="#F8FAFC"/>
+                                        <Label Text="File gambar telah dihapus dari perangkat" FontSize="10" TextColor="#94A3B8" FontAttributes="Italic"/>
+                                    </VerticalStackLayout>
                                 </Border>
 
                                 <!-- Video attachment (If any) -->

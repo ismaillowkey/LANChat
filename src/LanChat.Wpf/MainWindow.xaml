@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:converters="clr-namespace:LanChat.Wpf.Converters"
         mc:Ignorable="d"
-        Title="LAN Chat - Cross-Platform Local Messenger" Height="720" Width="1080"
+        Title="{Binding Strings.AppTitle}" Height="750" Width="1180" MinWidth="1100" MinHeight="660"
         WindowStartupLocation="CenterScreen"
         Icon="Resources/app_logo.png"
         Background="#F8FAFC" Foreground="#0F172A"
@@ -16,6 +16,40 @@
         <converters:ByteArrayToImageConverter x:Key="ByteArrayToImageConverter"/>
         <converters:BoolToHorizontalAlignmentConverter x:Key="BoolToHorizontalAlignmentConverter"/>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+
+        <!-- Bendera Indonesia Vector Template -->
+        <ControlTemplate x:Key="IndonesianFlagTemplate">
+            <Border Width="22" Height="15" CornerRadius="3" BorderBrush="#94A3B8" BorderThickness="0.8" ClipToBounds="True">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Rectangle Grid.Row="0" Fill="#E11D48"/>
+                    <Rectangle Grid.Row="1" Fill="#FFFFFF"/>
+                </Grid>
+            </Border>
+        </ControlTemplate>
+
+        <!-- Bendera Inggris (UK Union Jack) Vector Template -->
+        <ControlTemplate x:Key="EnglishFlagTemplate">
+            <Border Width="22" Height="15" CornerRadius="3" BorderBrush="#94A3B8" BorderThickness="0.8" ClipToBounds="True">
+                <Viewbox Stretch="Fill">
+                    <Grid Width="60" Height="36" Background="#012169">
+                        <!-- White diagonal saltire -->
+                        <Path Data="M0,0 L60,36 M60,0 L0,36" Stroke="#FFFFFF" StrokeThickness="10"/>
+                        <!-- Red diagonal saltire -->
+                        <Path Data="M0,0 L60,36 M60,0 L0,36" Stroke="#C8102E" StrokeThickness="4"/>
+                        <!-- White cross -->
+                        <Rectangle Fill="#FFFFFF" Width="14" Height="36" HorizontalAlignment="Center"/>
+                        <Rectangle Fill="#FFFFFF" Height="14" Width="60" VerticalAlignment="Center"/>
+                        <!-- Red cross -->
+                        <Rectangle Fill="#C8102E" Width="8" Height="36" HorizontalAlignment="Center"/>
+                        <Rectangle Fill="#C8102E" Height="8" Width="60" VerticalAlignment="Center"/>
+                    </Grid>
+                </Viewbox>
+            </Border>
+        </ControlTemplate>
 
         <!-- LAN Network Vector Icon Template -->
         <ControlTemplate x:Key="LanIconTemplate">
@@ -119,7 +153,10 @@
                     </Border>
                     <StackPanel VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="LAN CHAT" FontWeight="Bold" FontSize="16" Foreground="#0F172A" Margin="0,0,8,0"/>
+                            <TextBlock Text="LAN CHAT" FontWeight="Bold" FontSize="16" Foreground="#0F172A" Margin="0,0,6,0"/>
+                            <Border Background="#F1F5F9" CornerRadius="4" Padding="5,1" Margin="0,0,8,0" VerticalAlignment="Center" BorderBrush="#E2E8F0" BorderThickness="1">
+                                <TextBlock Text="v0.2.3" FontSize="10" FontWeight="SemiBold" Foreground="#475569"/>
+                            </Border>
                             <!-- LAN + Chat Vector Badges -->
                             <Border Background="#EEF2FF" CornerRadius="6" Padding="6,3" BorderBrush="#C7D2FE" BorderThickness="1" VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -128,7 +165,7 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                        <TextBlock Text="Direct &amp; Broadcast P2P (Wi-Fi / LAN)" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                        <TextBlock Text="{Binding Strings.SubTitle}" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -148,11 +185,11 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Local Device Name Setting -->
+                <!-- Local Device Name Setting & Language Toggle -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Device Saya:" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
+                    <TextBlock Text="{Binding Strings.MyDeviceLabel}" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
                     <TextBox Text="{Binding EditableDeviceName, UpdateSourceTrigger=PropertyChanged}" 
-                             Width="160" Background="#FFFFFF" Foreground="#0F172A" BorderBrush="#CBD5E1" 
+                             Width="150" Background="#FFFFFF" Foreground="#0F172A" BorderBrush="#CBD5E1" 
                              BorderThickness="1" Padding="8,6" VerticalAlignment="Center" FontSize="12">
                         <TextBox.Resources>
                             <Style TargetType="Border">
@@ -160,8 +197,122 @@
                             </Style>
                         </TextBox.Resources>
                     </TextBox>
-                    <Button Content="Ubah" Style="{StaticResource ModernButton}" Margin="8,0,0,0"
-                            Padding="12,6" FontSize="12" Command="{Binding SaveDeviceNameCommand}" ToolTip="Simpan nama device ke settings"/>
+                    <Button Content="{Binding Strings.Change}" Style="{StaticResource ModernButton}" Margin="8,0,0,0"
+                            Padding="12,6" FontSize="12" Command="{Binding SaveDeviceNameCommand}" ToolTip="{Binding Strings.SaveDeviceTooltip}"/>
+                    <Button Content="{Binding Strings.MediaFolder}" Style="{StaticResource ModernButton}" Margin="8,0,0,0"
+                            Background="#F1F5F9" Foreground="#334155" BorderBrush="#CBD5E1" BorderThickness="1"
+                            Padding="10,6" FontSize="12" Command="{Binding OpenAppMediaFolderCommand}" 
+                            ToolTip="{Binding Strings.MediaFolderTooltip}"/>
+                    <!-- Segmented Flag Language Switcher (Indonesia & Inggris) -->
+                    <Border Background="#F1F5F9" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="8" Padding="2" Margin="10,0,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <!-- Indonesian Flag Button -->
+                            <Button Command="{Binding SetIndonesianCommand}" ToolTip="Bahasa Indonesia" Cursor="Hand" Margin="0,0,2,0">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="BorderBrush" Value="Transparent"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                        <Setter Property="Padding" Value="7,4"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" 
+                                                            BorderBrush="{TemplateBinding BorderBrush}" 
+                                                            BorderThickness="{TemplateBinding BorderThickness}" 
+                                                            CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Strings.IsIndonesian}" Value="True">
+                                                <Setter Property="Background" Value="#FFFFFF"/>
+                                                <Setter Property="BorderBrush" Value="#6366F1"/>
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect BlurRadius="4" ShadowDepth="1" Opacity="0.12" Color="#000000"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Opacity" Value="0.85"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Control Template="{StaticResource IndonesianFlagTemplate}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="ID" FontWeight="Bold" FontSize="11" Margin="5,0,2,0" VerticalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#64748B"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Strings.IsIndonesian}" Value="True">
+                                                        <Setter Property="Foreground" Value="#4338CA"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- English Flag Button -->
+                            <Button Command="{Binding SetEnglishCommand}" ToolTip="English" Cursor="Hand">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="BorderBrush" Value="Transparent"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                        <Setter Property="Padding" Value="7,4"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" 
+                                                            BorderBrush="{TemplateBinding BorderBrush}" 
+                                                            BorderThickness="{TemplateBinding BorderThickness}" 
+                                                            CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Strings.IsEnglish}" Value="True">
+                                                <Setter Property="Background" Value="#FFFFFF"/>
+                                                <Setter Property="BorderBrush" Value="#6366F1"/>
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect BlurRadius="4" ShadowDepth="1" Opacity="0.12" Color="#000000"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Opacity" Value="0.85"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Control Template="{StaticResource EnglishFlagTemplate}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="EN" FontWeight="Bold" FontSize="11" Margin="5,0,2,0" VerticalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#64748B"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Strings.IsEnglish}" Value="True">
+                                                        <Setter Property="Foreground" Value="#4338CA"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Grid>
         </Border>
@@ -188,9 +339,9 @@
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <Control Template="{StaticResource LanIconTemplate}" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="DEVICE DI LAN" FontWeight="Bold" FontSize="11" Foreground="#475569" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Strings.DevicesOnLan}" FontWeight="Bold" FontSize="11" Foreground="#475569" VerticalAlignment="Center"/>
                             </StackPanel>
-                            <TextBlock Text="Pilih tujuan chat (Broadcast atau Direct 1-on-1)" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                            <TextBlock Text="{Binding Strings.DevicesOnLanSub}" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
                         </StackPanel>
                     </Border>
 
@@ -279,8 +430,21 @@
                                             </StackPanel>
                                         </Border>
 
-                                        <!-- Online Status Dot -->
-                                        <Ellipse Width="8" Height="8" Fill="#10B981" VerticalAlignment="Center"/>
+                                        <!-- Online / Offline Status Dot -->
+                                        <Ellipse Width="8" Height="8" VerticalAlignment="Center">
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse">
+                                                    <Setter Property="Fill" Value="#10B981"/>
+                                                    <Setter Property="ToolTip" Value="Online"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsOnline}" Value="False">
+                                                            <Setter Property="Fill" Value="#94A3B8"/>
+                                                            <Setter Property="ToolTip" Value="Offline"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
                                     </StackPanel>
                                 </Grid>
                             </DataTemplate>
@@ -310,7 +474,7 @@
 
                         <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                             <Control Template="{StaticResource ChatIconTemplate}" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Ruang Chat: " Foreground="#64748B" FontSize="14" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Strings.ChatRoom}" Foreground="#64748B" FontSize="14" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding SelectedTarget.DisplayName}" FontWeight="Bold" FontSize="14" Foreground="#4F46E5" VerticalAlignment="Center"/>
                         </StackPanel>
 
@@ -435,11 +599,69 @@
                                                 </TextBlock>
                                             </Grid>
 
-                                            <!-- Image Display (If present) -->
+                                            <!-- Image Display (If present & file exists on local disk) -->
                                             <Border CornerRadius="8" Margin="0,4" MaxHeight="300"
-                                                    Visibility="{Binding ImageData, Converter={StaticResource NullToVisibilityConverter}}">
+                                                    Visibility="{Binding HasImagePreview, Converter={StaticResource BoolToVisibilityConverter}}">
                                                 <Image Source="{Binding ImageData, Converter={StaticResource ByteArrayToImageConverter}}" 
                                                        Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                            </Border>
+
+                                            <!-- Missing / Deleted Image Fallback (WhatsApp style: shows sender notice when file was deleted from folder) -->
+                                            <Border CornerRadius="8" Margin="0,4" Padding="12,10"
+                                                    Visibility="{Binding IsMissingImage, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#F1F5F9"/>
+                                                        <Setter Property="BorderBrush" Value="#CBD5E1"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
+                                                                <Setter Property="Background" Value="#3730A3"/>
+                                                                <Setter Property="BorderBrush" Value="#4338CA"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18" 
+                                                            Background="#EEF2FF" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                        <TextBlock Text="📷" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <!-- e.g. "Ismail mengirim gambar" or "Anda mengirim gambar" -->
+                                                        <TextBlock Text="{Binding MissingMediaNotice}" FontWeight="SemiBold" FontSize="12">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
+                                                                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                        <TextBlock Text="{Binding DataContext.Strings.ImageDeletedNotice, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                                   FontSize="10" FontStyle="Italic" Margin="0,2,0,0">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="#64748B"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
+                                                                            <Setter Property="Foreground" Value="#CBD5E1"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                </Grid>
                                             </Border>
 
                                             <!-- Video Display Card (If present) -->
@@ -543,7 +765,7 @@
                         <!-- Attach Photo and Video Buttons -->
                         <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,10,0">
                             <!-- Attach Photo Button -->
-                            <Button Command="{Binding AttachImageCommand}" Style="{StaticResource IconButton}" Margin="0,0,6,0" ToolTip="Kirim Foto / Gambar">
+                            <Button Command="{Binding AttachImageCommand}" Style="{StaticResource IconButton}" Margin="0,0,6,0" ToolTip="{Binding Strings.AttachImageTooltip}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="📷" FontSize="15" Margin="0,0,5,0"/>
                                     <TextBlock Text="Foto" FontSize="12" VerticalAlignment="Center"/>
@@ -551,7 +773,7 @@
                             </Button>
 
                             <!-- Attach Video Button -->
-                            <Button Command="{Binding AttachVideoCommand}" Style="{StaticResource IconButton}" ToolTip="Kirim Video">
+                            <Button Command="{Binding AttachVideoCommand}" Style="{StaticResource IconButton}" ToolTip="{Binding Strings.AttachVideoTooltip}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="🎥" FontSize="15" Margin="0,0,5,0"/>
                                     <TextBlock Text="Video" FontSize="12" VerticalAlignment="Center"/>
@@ -573,9 +795,9 @@
                         </TextBox>
 
                         <!-- Send Button -->
-                        <Button Grid.Column="2" Command="{Binding SendMessageCommand}" Style="{StaticResource ModernButton}" Margin="10,0,0,0">
+                        <Button Grid.Column="2" Command="{Binding SendMessageCommand}" Style="{StaticResource ModernButton}" Margin="10,0,0,0" ToolTip="{Binding Strings.SendTooltip}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Kirim" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="{Binding Strings.Send}" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                 <TextBlock Text="➤" FontSize="12" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>

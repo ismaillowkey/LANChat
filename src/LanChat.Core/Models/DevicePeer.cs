@@ -34,7 +34,7 @@ public partial class DevicePeer : ObservableObject
 
     public bool IsBroadcastTarget => Id == BroadcastTargetId;
 
-    public string DisplayName => IsBroadcastTarget ? "📢 Semua Device (Broadcast)" : $"{Name} ({IpAddress})";
+    public string DisplayName => IsBroadcastTarget ? Services.LocalizationService.Instance.AllDevicesDisplayName : $"{Name} ({IpAddress})";
 
     public static DevicePeer CreateBroadcastTarget()
     {
