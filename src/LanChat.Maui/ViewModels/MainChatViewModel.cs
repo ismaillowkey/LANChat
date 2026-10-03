@@ -314,6 +314,36 @@ public partial class MainChatViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task AttachMediaAsync()
+    {
+        var currentTarget = SelectedTarget;
+        if (currentTarget != null && !currentTarget.IsBroadcastTarget && !currentTarget.IsOnline)
+        {
+            await Shell.Current.DisplayAlert(Strings.WarningTitle, Strings.FormatPeerOffline(currentTarget.Name), "OK");
+            return;
+        }
+
+        string optPhoto = $"📷 {Strings.Photo}";
+        string optVideo = $"🎥 {Strings.Video}";
+
+        string action = await Shell.Current.DisplayActionSheet(
+            Strings.AttachMediaTitle,
+            Strings.Cancel,
+            null,
+            optPhoto,
+            optVideo);
+
+        if (action == optPhoto)
+        {
+            await PickAndSendPhotoAsync();
+        }
+        else if (action == optVideo)
+        {
+            await PickAndSendVideoAsync();
+        }
+    }
+
+    [RelayCommand]
     private void SaveDeviceName()
     {
         if (!string.IsNullOrWhiteSpace(DeviceName))

@@ -341,68 +341,78 @@
                 </CollectionView.ItemTemplate>
             </CollectionView>
 
-            <!-- 4. BOTTOM INPUT BAR (PERSIS TAMPILAN DESKTOP) -->
-            <VerticalStackLayout Grid.Row="2" Spacing="0" BackgroundColor="#FFFFFF" VerticalOptions="End">
-                <!-- 1px Top Divider -->
-                <BoxView HeightRequest="1" Color="#E2E8F0" HorizontalOptions="Fill"/>
+            <!-- 4. BOTTOM INPUT BAR (WHATSAPP MOBILE STYLE) -->
+            <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="6" Padding="6,6,6,8" 
+                  BackgroundColor="#F8FAFC" VerticalOptions="End">
 
-                <!-- Bottom Bar Content -->
-                <Grid Padding="12,10" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" VerticalOptions="Center">
+                <!-- WhatsApp-style Input Pill -->
+                <Border Grid.Column="0" BackgroundColor="#FFFFFF" Stroke="#CBD5E1" StrokeThickness="1" 
+                        StrokeShape="RoundRectangle 24" Padding="12,2,6,2" VerticalOptions="Center">
+                    <Border.Shadow>
+                        <Shadow Brush="#000000" Opacity="0.06" Radius="4" Offset="0,1"/>
+                    </Border.Shadow>
+                    
+                    <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="2" VerticalOptions="Center">
+                        
+                        <!-- Multiline Expandable Message Input (WhatsApp style) -->
+                        <Editor Grid.Column="0" 
+                                Text="{Binding MessageInput}" 
+                                Placeholder="{Binding Strings.TypeMessagePlaceholder}" 
+                                PlaceholderColor="#94A3B8" 
+                                TextColor="#0F172A" 
+                                FontSize="15" 
+                                AutoSize="TextChanges"
+                                MaximumHeightRequest="110"
+                                BackgroundColor="Transparent"
+                                VerticalOptions="Center"
+                                Keyboard="Chat"
+                                IsSpellCheckEnabled="True"/>
 
-                    <!-- Attach Photo & Video Buttons -->
-                    <HorizontalStackLayout Grid.Column="0" Spacing="6" VerticalOptions="Center">
-                        <!-- Foto Button [📷 Foto] -->
-                        <Border BackgroundColor="#F1F5F9" Stroke="#CBD5E1" StrokeThickness="1" StrokeShape="RoundRectangle 8" 
-                                Padding="10,8" HeightRequest="40" VerticalOptions="Center">
+                        <!-- Paperclip Attachment Menu [📎] (Choice of Photo/Video) -->
+                        <Border Grid.Column="1" BackgroundColor="Transparent" StrokeThickness="0" 
+                                WidthRequest="34" HeightRequest="34" StrokeShape="RoundRectangle 17" 
+                                VerticalOptions="End" Margin="0,0,0,3">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding AttachMediaCommand}"/>
+                            </Border.GestureRecognizers>
+                            <Label Text="📎" FontSize="17" TextColor="#64748B" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+
+                        <!-- Direct Attach Photo Button [📷] -->
+                        <Border Grid.Column="2" BackgroundColor="Transparent" StrokeThickness="0" 
+                                WidthRequest="34" HeightRequest="34" StrokeShape="RoundRectangle 17" 
+                                VerticalOptions="End" Margin="0,0,0,3">
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding PickAndSendPhotoCommand}"/>
                             </Border.GestureRecognizers>
-                            <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
-                                <Label Text="📷" FontSize="14" VerticalOptions="Center"/>
-                                <Label Text="{Binding Strings.Photo}" FontSize="12" FontAttributes="Bold" TextColor="#334155" VerticalOptions="Center"/>
-                            </HorizontalStackLayout>
+                            <Label Text="📷" FontSize="17" HorizontalOptions="Center" VerticalOptions="Center"/>
                         </Border>
 
-                        <!-- Video Button [🎥 Video] -->
-                        <Border BackgroundColor="#F1F5F9" Stroke="#CBD5E1" StrokeThickness="1" StrokeShape="RoundRectangle 8" 
-                                Padding="10,8" HeightRequest="40" VerticalOptions="Center">
+                        <!-- Direct Attach Video Button [🎥] -->
+                        <Border Grid.Column="3" BackgroundColor="Transparent" StrokeThickness="0" 
+                                WidthRequest="34" HeightRequest="34" StrokeShape="RoundRectangle 17" 
+                                VerticalOptions="End" Margin="0,0,0,3">
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding PickAndSendVideoCommand}"/>
                             </Border.GestureRecognizers>
-                            <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
-                                <Label Text="🎥" FontSize="14" VerticalOptions="Center"/>
-                                <Label Text="{Binding Strings.Video}" FontSize="12" FontAttributes="Bold" TextColor="#334155" VerticalOptions="Center"/>
-                            </HorizontalStackLayout>
+                            <Label Text="🎥" FontSize="17" HorizontalOptions="Center" VerticalOptions="Center"/>
                         </Border>
-                    </HorizontalStackLayout>
+                    </Grid>
+                </Border>
 
-                    <!-- Text Input Box (Full width, rounded 8, Light Gray background) -->
-                    <Border Grid.Column="1" BackgroundColor="#F8FAFC" Stroke="#CBD5E1" StrokeThickness="1" StrokeShape="RoundRectangle 8" 
-                            Padding="12,0" HeightRequest="40" VerticalOptions="Center" HorizontalOptions="Fill">
-                        <Entry Text="{Binding MessageInput}" 
-                               Placeholder="{Binding Strings.TypeMessagePlaceholder}" 
-                               PlaceholderColor="#94A3B8" 
-                               TextColor="#0F172A" 
-                               FontSize="13"
-                               VerticalOptions="Center" 
-                               HorizontalOptions="Fill"
-                               ReturnType="Send" 
-                               ReturnCommand="{Binding SendMessageCommand}"/>
-                    </Border>
-
-                    <!-- Send Button [Kirim ➤] (Purple/Indigo, White text, Bold) -->
-                    <Border Grid.Column="2" BackgroundColor="#4F46E5" Stroke="#4338CA" StrokeThickness="1" StrokeShape="RoundRectangle 8" 
-                            Padding="14,0" HeightRequest="40" VerticalOptions="Center">
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding SendMessageCommand}"/>
-                        </Border.GestureRecognizers>
-                        <HorizontalStackLayout Spacing="6" VerticalOptions="Center" HorizontalOptions="Center">
-                            <Label Text="{Binding Strings.Send}" TextColor="#FFFFFF" FontSize="13" FontAttributes="Bold" VerticalOptions="Center"/>
-                            <Label Text="➤" TextColor="#FFFFFF" FontSize="12" VerticalOptions="Center"/>
-                        </HorizontalStackLayout>
-                    </Border>
-                </Grid>
-            </VerticalStackLayout>
+                <!-- WhatsApp-style Floating Circular Send Button [➤] -->
+                <Border Grid.Column="1" BackgroundColor="#4F46E5" Stroke="#4338CA" StrokeThickness="1" 
+                        StrokeShape="RoundRectangle 24" WidthRequest="48" HeightRequest="48" VerticalOptions="End" Margin="0,0,0,1">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SendMessageCommand}"/>
+                    </Border.GestureRecognizers>
+                    <Border.Shadow>
+                        <Shadow Brush="#4F46E5" Opacity="0.35" Radius="8" Offset="0,3"/>
+                    </Border.Shadow>
+                    <Label Text="➤" TextColor="#FFFFFF" FontSize="18" FontAttributes="Bold" 
+                           HorizontalOptions="Center" VerticalOptions="Center" TranslationX="1"/>
+                </Border>
+            </Grid>
         </Grid>
 
         <!-- 2. BACKDROP (SCRIM OVERLAY UNTUK MENUTUP DRAWER SAAT DI-TAP) -->

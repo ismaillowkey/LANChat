@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace LanChat.Maui;
 
@@ -17,6 +17,19 @@ public static class MauiProgram
 
 #if DEBUG
 		builder.Logging.AddDebug();
+#endif
+
+#if ANDROID
+		Microsoft.Maui.Handlers.EditorHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
+		{
+			handler.PlatformView.Background = null;
+			handler.PlatformView.SetBackgroundColor(Android.Graphics.Color.Transparent);
+		});
+		Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
+		{
+			handler.PlatformView.Background = null;
+			handler.PlatformView.SetBackgroundColor(Android.Graphics.Color.Transparent);
+		});
 #endif
 
 		return builder.Build();

@@ -93,7 +93,9 @@ public partial class LocalizationService : ObservableObject
     public string FileDeleted => IsEnglish ? "File deleted" : "File telah dihapus";
 
     // Input Bar
-    public string TypeMessagePlaceholder => IsEnglish ? "Type your message here... (Enter to send)" : "Ketik pesan Anda di sini... (Enter untuk kirim)";
+    public string TypeMessagePlaceholder => IsEnglish ? "Message" : "Ketik pesan...";
+    public string Cancel => IsEnglish ? "Cancel" : "Batal";
+    public string AttachMediaTitle => IsEnglish ? "Attach Media" : "Lampirkan Media";
     public string Send => IsEnglish ? "Send" : "Kirim";
     public string SendTooltip => IsEnglish ? "Send Message (Enter)" : "Kirim Pesan (Enter)";
     public string AttachImageTooltip => IsEnglish ? "Send Photo / Image" : "Kirim Foto / Gambar";
