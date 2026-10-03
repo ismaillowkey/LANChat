@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Specialized;
 using System.Threading.Tasks;
+using LanChat.Maui.Services;
 using LanChat.Maui.ViewModels;
 using Microsoft.Maui.Controls;
 
@@ -20,6 +21,29 @@ public partial class MainPage : ContentPage
 		_viewModel.RequestCloseDrawer += CloseDrawerAsync;
 
 		_viewModel.FilteredMessages.CollectionChanged += OnMessagesChanged;
+
+		// Listen to keyboard height changes on Android
+		KeyboardHelper.KeyboardHeightChanged += OnKeyboardHeightChanged;
+	}
+
+	private void OnKeyboardHeightChanged(double keyboardHeightDp)
+	{
+		MainThread.BeginInvokeOnMainThread(async () =>
+		{
+			MainChatGrid.Padding = new Thickness(0, 0, 0, keyboardHeightDp);
+
+			if (keyboardHeightDp > 0 && _viewModel.FilteredMessages.Count > 0)
+			{
+				try
+				{
+					var lastItem = _viewModel.FilteredMessages[^1];
+					MessagesList.ScrollTo(lastItem, position: ScrollToPosition.End, animate: false);
+					await Task.Delay(80);
+					MessagesList.ScrollTo(lastItem, position: ScrollToPosition.End, animate: false);
+				}
+				catch { }
+			}
+		});
 	}
 
 	public async Task OpenDrawerAsync()
@@ -62,6 +86,7 @@ public partial class MainPage : ContentPage
 	protected override void OnDisappearing()
 	{
 		base.OnDisappearing();
+		KeyboardHelper.KeyboardHeightChanged -= OnKeyboardHeightChanged;
 		_viewModel.Manager.Dispose();
 	}
 }

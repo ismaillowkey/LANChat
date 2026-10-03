@@ -5,6 +5,7 @@ using Android.Content.PM;
 using Android.Net.Wifi;
 using Android.OS;
 using Android.Views;
+using AndroidX.Core.View;
 using LanChat.Maui.Platforms.Android;
 using LanChat.Maui.Services;
 
@@ -25,7 +26,19 @@ public class MainActivity : MauiAppCompatActivity
         base.OnCreate(savedInstanceState);
 
         // Ensure soft keyboard resizes the view, keeping header fixed at the top
-        Window?.SetSoftInputMode(SoftInput.AdjustResize);
+        if (Window != null)
+        {
+            WindowCompat.SetDecorFitsSystemWindows(Window, true);
+            Window.SetSoftInputMode(SoftInput.AdjustResize);
+
+            ViewCompat.SetOnApplyWindowInsetsListener(Window.DecorView, new KeyboardInsetsListener());
+
+            var contentView = Window.DecorView.FindViewById(Android.Resource.Id.Content);
+            if (contentView != null)
+            {
+                contentView.ViewTreeObserver?.AddOnGlobalLayoutListener(new GlobalLayoutListener(contentView));
+            }
+        }
 
         // Initialize Android notification service
         LanChat.Maui.Services.NotificationService.Initialize(new AndroidNotificationService());
@@ -62,6 +75,63 @@ public class MainActivity : MauiAppCompatActivity
         {
             _multicastLock?.Release();
             _multicastLock = null;
+        }
+        catch { }
+    }
+}
+
+public class KeyboardInsetsListener : Java.Lang.Object, IOnApplyWindowInsetsListener
+{
+    public WindowInsetsCompat OnApplyWindowInsets(Android.Views.View v, WindowInsetsCompat insets)
+    {
+        try
+        {
+            var imeInsets = insets.GetInsets(WindowInsetsCompat.Type.Ime());
+            var navInsets = insets.GetInsets(WindowInsetsCompat.Type.NavigationBars());
+            int keyboardHeightPx = Math.Max(0, imeInsets.Bottom - navInsets.Bottom);
+
+            if (imeInsets.Bottom > 0)
+            {
+                KeyboardHelper.NotifyKeyboardHeight(keyboardHeightPx);
+            }
+            else
+            {
+                KeyboardHelper.NotifyKeyboardHeight(0);
+            }
+        }
+        catch { }
+        return ViewCompat.OnApplyWindowInsets(v, insets);
+    }
+}
+
+public class GlobalLayoutListener : Java.Lang.Object, ViewTreeObserver.IOnGlobalLayoutListener
+{
+    private readonly Android.Views.View _contentView;
+
+    public GlobalLayoutListener(Android.Views.View contentView)
+    {
+        _contentView = contentView;
+    }
+
+    public void OnGlobalLayout()
+    {
+        try
+        {
+            var r = new Android.Graphics.Rect();
+            _contentView.GetWindowVisibleDisplayFrame(r);
+            int screenHeight = _contentView.RootView?.Height ?? 0;
+            if (screenHeight <= 0) return;
+
+            int heightDiff = screenHeight - r.Bottom;
+            // Keypad is open if keypadHeight > 15% of screen height
+            if (heightDiff > screenHeight * 0.15)
+            {
+                KeyboardHelper.NotifyKeyboardHeight(heightDiff);
+            }
+            else
+            {
+                KeyboardHelper.NotifyKeyboardHeight(0);
+            }
         }
         catch { }
     }

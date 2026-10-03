@@ -17,7 +17,7 @@
     <Grid>
 
         <!-- 1. MAIN CHAT AREA -->
-        <Grid RowDefinitions="Auto,*,Auto">
+        <Grid x:Name="MainChatGrid" RowDefinitions="Auto,*,Auto">
 
             <!-- TOP APP BAR -->
             <VerticalStackLayout Grid.Row="0" Spacing="0" BackgroundColor="#FFFFFF">
