@@ -1,0 +1,12 @@
+<Solution>
+  <Project Path="LanChat.Android/LanChat.Android.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="LanChat.Browser/LanChat.Browser.csproj" />
+  <Project Path="LanChat.Desktop/LanChat.Desktop.csproj" />
+  <Project Path="LanChat.iOS/LanChat.iOS.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="LanChat.Core/LanChat.Core.csproj" />
+  <Project Path="LanChat/LanChat.csproj" />
+</Solution>

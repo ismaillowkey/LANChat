@@ -41,6 +41,43 @@ public partial class ChatMessage : ObservableObject
     private bool _isOutgoing;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowStatusCheckmark))]
+    [NotifyPropertyChangedFor(nameof(StatusCheckmarkIcon))]
+    [NotifyPropertyChangedFor(nameof(StatusCheckmarkColor))]
+    [NotifyPropertyChangedFor(nameof(StatusTooltip))]
+    private MessageStatus _status = MessageStatus.Sent;
+
+    public bool ShowStatusCheckmark => IsOutgoing && IsDirect;
+
+    public string StatusCheckmarkIcon => Status switch
+    {
+        MessageStatus.Sent => "✓",
+        MessageStatus.Delivered => "✓✓",
+        MessageStatus.Read => "✓✓",
+        _ => "✓"
+    };
+
+    public string StatusCheckmarkColor => Status switch
+    {
+        MessageStatus.Read => "#38BDF8", // WhatsApp Sky Blue
+        _ => "#CBD5E1"                   // Light Grey on Indigo
+    };
+
+    public string StatusTooltip => Status switch
+    {
+        MessageStatus.Sent => Services.LocalizationService.Instance.IsEnglish 
+            ? "Sent (waiting for receiver)" 
+            : "Terkirim (belum diterima receiver)",
+        MessageStatus.Delivered => Services.LocalizationService.Instance.IsEnglish 
+            ? "Delivered (received by device)" 
+            : "Terkirim & diterima (belum dibaca)",
+        MessageStatus.Read => Services.LocalizationService.Instance.IsEnglish 
+            ? "Read by receiver" 
+            : "Sudah dibaca oleh receiver",
+        _ => string.Empty
+    };
+
+    [ObservableProperty]
     private bool _isMediaDeleted;
 
     [ObservableProperty]

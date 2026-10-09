@@ -5,12 +5,23 @@ namespace LanChat.Core.Services;
 
 public static class MediaStorageService
 {
+    public static Func<string, byte[], string>? CustomMediaSaver { get; set; }
+
     public static string MediaDirectory => StoragePaths.MediaDirectory;
 
     public static string SaveMedia(string originalFileName, byte[] data)
     {
         try
         {
+            if (CustomMediaSaver != null)
+            {
+                var customPath = CustomMediaSaver(originalFileName, data);
+                if (!string.IsNullOrEmpty(customPath) && File.Exists(customPath))
+                {
+                    return customPath;
+                }
+            }
+
             var dir = MediaDirectory;
             var safeName = SanitizeFileName(originalFileName);
 

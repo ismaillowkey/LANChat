@@ -52,9 +52,10 @@ public partial class LocalizationService : ObservableObject
     public string LanguageToggleShortText => IsEnglish ? "🇬🇧 EN" : "🇮🇩 ID";
 
     // Application Branding & Headers
+    public string AppVersion => AppVersionService.Version;
     public string AppTitle => IsEnglish 
-        ? "LAN Chat v0.2.3 - Cross-Platform Local Messenger" 
-        : "LAN Chat v0.2.3 - Messenger Lokal Lintas Platform";
+        ? $"LAN Chat v{AppVersion} - Cross-Platform Local Messenger" 
+        : $"LAN Chat v{AppVersion} - Messenger Lokal Lintas Platform";
 
     public string SubTitle => "Direct & Broadcast P2P (Wi-Fi / LAN)";
     public string MyDevice => IsEnglish ? "My Device:" : "Device Saya:";
@@ -71,6 +72,7 @@ public partial class LocalizationService : ObservableObject
     public string AllDevicesBroadcast => IsEnglish ? "All Devices (Broadcast)" : "Semua Device (Broadcast)";
     public string AllDevicesDisplayName => IsEnglish ? "📢 All Devices (Broadcast)" : "📢 Semua Device (Broadcast)";
     public string AllDevices => IsEnglish ? "All Devices" : "Semua Device";
+    public string BroadcastSubtitle => IsEnglish ? "Send to all devices on LAN" : "Kirim ke semua device di LAN";
 
     // Chat Header & Badges
     public string ChatRoom => IsEnglish ? "Chat Room: " : "Ruang Chat: ";
@@ -101,11 +103,13 @@ public partial class LocalizationService : ObservableObject
     public string AttachImageTooltip => IsEnglish ? "Send Photo / Image" : "Kirim Foto / Gambar";
     public string AttachVideoTooltip => IsEnglish ? "Send Video (Max 250 MB)" : "Kirim Video (Maks 250 MB)";
     public string Photo => IsEnglish ? "Photo" : "Foto";
+    public string Gallery => IsEnglish ? "Gallery" : "Galeri";
     public string Video => "Video";
 
     // Statuses
     public string Online => "Online";
     public string Offline => "Offline";
+    public string DeleteOfflineDeviceTooltip => IsEnglish ? "Delete offline device" : "Hapus device offline";
 
     // Dynamic Formatted Messages
     public string FormatUserSentImage(string senderName) =>
@@ -126,10 +130,48 @@ public partial class LocalizationService : ObservableObject
 
     public string PickImageTitle => IsEnglish ? "Select Image to Send" : "Pilih Gambar untuk Dikirim";
     public string PickVideoTitle => IsEnglish ? "Select Video to Send" : "Pilih Video untuk Dikirim";
+    public string SendPhoto => IsEnglish ? "Send Photo" : "Kirim Foto";
+    public string SendVideo => IsEnglish ? "Send Video" : "Kirim Video";
+    public string AttachMedia => IsEnglish ? "Attach Media" : "Lampirkan Media";
     public string VideoTooLarge => IsEnglish ? "Video size exceeds 250 MB limit." : "Ukuran video melebihi batas 250 MB.";
     public string VideoTooLargeTitle => IsEnglish ? "File Too Large" : "File Terlalu Besar";
     public string MediaNotFound => IsEnglish ? "Media file not found in local storage (it may have been deleted)." : "File media tidak ditemukan di penyimpanan lokal (mungkin telah dipindahkan atau dihapus).";
     public string MediaNotFoundTitle => IsEnglish ? "File Not Found" : "File Tidak Ditemukan";
     public string WarningTitle => IsEnglish ? "Warning" : "Perhatian";
     public string ErrorTitle => "Error";
+    public string ConfirmDeleteTitle => IsEnglish ? "Confirm Delete" : "Konfirmasi Hapus";
+    public string FormatConfirmDeletePeer(string peerName) =>
+        IsEnglish
+            ? $"Are you sure you want to remove offline device '{peerName}' from the list?"
+            : $"Apakah Anda yakin ingin menghapus device offline '{peerName}' dari daftar?";
+
+    public string DeviceNameUpdatedTitle => IsEnglish ? "Device Name Updated" : "Nama Device Diperbarui";
+    public string FormatDeviceNameUpdated(string newName) =>
+        IsEnglish
+            ? $"Device name successfully changed to '{newName}'."
+            : $"Nama device berhasil diubah menjadi '{newName}'.";
+    public string DeviceNameCannotBeEmpty => IsEnglish ? "Device name cannot be empty." : "Nama device tidak boleh kosong.";
+
+    public string ConfirmChangeDeviceNameTitle => IsEnglish ? "Confirm Change Device Name" : "Konfirmasi Ubah Nama Perangkat";
+    public string ConfirmChangeDeviceNameMessage => IsEnglish
+        ? "Are you sure you want to change your device name? Changing device name carries a risk of losing chat history and previous sessions."
+        : "Apakah Anda yakin ingin mengubah nama perangkat? Mengubah nama perangkat berisiko kehilangan riwayat chat dan sesi obrolan sebelumnya.";
+    public string YesChange => IsEnglish ? "Yes, Change" : "Ya, Ganti";
+
+    // Menu Bar & About Strings
+    public string MenuFile => IsEnglish ? "File" : "Berkas";
+    public string MenuExit => IsEnglish ? "Exit" : "Keluar";
+    public string MenuSettings => IsEnglish ? "Settings" : "Pengaturan";
+    public string AutoStartWithWindows => IsEnglish ? "Auto Start on System Startup" : "Mulai Otomatis Saat Startup Komputer";
+    public string AllowFirewall => IsEnglish ? "Allow Windows Firewall Access" : "Buka Akses Windows Firewall";
+    public string AllowFirewallSuccess => IsEnglish ? "Windows Firewall rules for LAN Chat have been successfully registered!" : "Aturan Windows Firewall untuk LAN Chat berhasil didaftarkan!";
+    public string AllowFirewallError => IsEnglish ? "Administrator permission was not granted or cancelled." : "Izin Administrator tidak diberikan atau dibatalkan.";
+    public string MenuAbout => IsEnglish ? "About" : "Tentang";
+    public string AboutTitle => IsEnglish ? "About LAN Chat" : "Tentang LAN Chat";
+    public string AboutDescription => IsEnglish
+        ? "Cross-platform local network (LAN/Wi-Fi) peer-to-peer instant messenger. Transfer text messages, photos, and videos directly without internet or external servers."
+        : "Aplikasi pesan instan jaringan lokal (LAN/Wi-Fi) lintas platform berbasis peer-to-peer tanpa internet. Kirim pesan teks, foto, dan video langsung tanpa server eksternal.";
+    public string AboutTechInfo => "Built with Avalonia UI (.NET 10) • Pure P2P Architecture";
+    public string TrayOpen => IsEnglish ? "Open LAN Chat" : "Buka LAN Chat";
+    public string TrayExit => IsEnglish ? "Exit" : "Keluar";
 }

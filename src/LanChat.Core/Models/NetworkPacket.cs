@@ -19,6 +19,9 @@ public class TransportPacket
     public string TargetId { get; set; } = DevicePeer.BroadcastTargetId;
     public string TargetName { get; set; } = "Semua Device";
     public MessageType Type { get; set; } = MessageType.Text;
+    public string Action { get; set; } = "MESSAGE"; // "MESSAGE", "ACK_DELIVERED", "ACK_READ"
+    public List<string>? AckMessageIds { get; set; }
+    public int SenderPort { get; set; }
     public string? Content { get; set; }
     public string? FileName { get; set; }
     public long FileSize { get; set; }

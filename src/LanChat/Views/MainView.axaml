@@ -1,0 +1,865 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:LanChat.ViewModels"
+             xmlns:models="using:LanChat.Core.Models"
+             xmlns:converters="using:LanChat.Converters"
+             xmlns:controls="using:LanChat.Controls"
+             mc:Ignorable="d" d:DesignWidth="1180" d:DesignHeight="750"
+             x:Class="LanChat.Views.MainView"
+             x:DataType="vm:MainViewModel"
+             Background="#F8FAFC" Foreground="#0F172A">
+
+    <Design.DataContext>
+        <vm:MainViewModel />
+    </Design.DataContext>
+
+    <UserControl.Resources>
+        <converters:ByteArrayToBitmapConverter x:Key="ByteArrayToBitmapConverter"/>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="Button.lang-btn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Padding" Value="7,4"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.lang-btn:pointerover">
+            <Setter Property="Background" Value="#E2E8F0"/>
+        </Style>
+        <Style Selector="Button.lang-btn.active">
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#4F46E5"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+        <Style Selector="Button.lang-btn TextBlock.lang-label">
+            <Setter Property="Foreground" Value="#64748B"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="Button.lang-btn.active TextBlock.lang-label">
+            <Setter Property="Foreground" Value="#4338CA"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
+        <!-- Peer List Item Card Styles (Active/Selected highlight: Kotak Background Abu-abu) -->
+        <Style Selector="Border.peer-card">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.12"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.12"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.peer-card:pointerover">
+            <Setter Property="Background" Value="#F1F5F9"/>
+        </Style>
+        <Style Selector="Border.peer-card.selected">
+            <Setter Property="Background" Value="#E2E8F0"/>
+            <Setter Property="BorderBrush" Value="#CBD5E1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Border.peer-card.selected:pointerover">
+            <Setter Property="Background" Value="#E2E8F0"/>
+            <Setter Property="BorderBrush" Value="#94A3B8"/>
+        </Style>
+
+        <Style Selector="Button.peer-btn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.peer-btn:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.peer-btn:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Button.delete-peer-btn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Width" Value="26"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="Padding" Value="3"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.delete-peer-btn:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#FEE2E2"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid x:Name="RootLayoutGrid">
+        <Grid RowDefinitions="Auto, Auto, *">
+            <!-- 0. MENU BAR (DESKTOP ONLY) -->
+            <Border Grid.Row="0" IsVisible="{Binding !IsMobileMode}" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="8,1">
+                <Menu Background="Transparent">
+                    <!-- Menu File -->
+                    <MenuItem Header="{Binding Strings.MenuFile}" FontSize="12" Foreground="#334155" Padding="10,5">
+                        <MenuItem Header="{Binding Strings.MenuExit}" Command="{Binding ExitAppCommand}" FontSize="12" InputGesture="Alt+F4">
+                            <MenuItem.Icon>
+                                <TextBlock Text="✕" FontSize="11" Foreground="#EF4444" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+
+                    <!-- Menu Setting -->
+                    <MenuItem Header="{Binding Strings.MenuSettings}" FontSize="12" Foreground="#334155" Padding="10,5">
+                        <MenuItem Header="{Binding Strings.AutoStartWithWindows}" Command="{Binding ToggleAutoStartCommand}" FontSize="12">
+                            <MenuItem.Icon>
+                                <CheckBox IsChecked="{Binding IsAutoStartEnabled, Mode=OneWay}" IsHitTestVisible="False" VerticalAlignment="Center"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="{Binding Strings.AllowFirewall}" Command="{Binding AllowFirewallCommand}" FontSize="12">
+                            <MenuItem.Icon>
+                                <TextBlock Text="🛡️" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+
+                    <!-- Menu About -->
+                    <MenuItem Header="{Binding Strings.MenuAbout}" Command="{Binding ShowAboutCommand}" FontSize="12" Foreground="#334155" Padding="10,5"/>
+                </Menu>
+            </Border>
+
+            <!-- 1A. DESKTOP TOP APP BAR (HEADER) -->
+            <Border Grid.Row="1" IsVisible="{Binding IsDesktopTopBarVisible}" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="20,12">
+                <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                    <!-- Brand & Device ID Section (Left) -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+                        <Image Source="avares://LanChat/Assets/app_logo.png" Width="42" Height="42" Stretch="Uniform" VerticalAlignment="Center"
+                               ToolTip.Tip="{Binding Strings.SubTitle}"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6">
+                                <TextBlock Text="LAN CHAT" FontWeight="Bold" FontSize="15" Foreground="#0F172A"/>
+                                <Border Background="#F1F5F9" CornerRadius="4" Padding="5,1" BorderBrush="#E2E8F0" BorderThickness="1">
+                                    <TextBlock Text="{Binding Strings.AppVersion, StringFormat='v{0}'}" FontSize="10" FontWeight="SemiBold" Foreground="#475569"/>
+                                </Border>
+                                <Border Background="#FEE2E2" BorderBrush="#FCA5A5" BorderThickness="1" CornerRadius="10" Padding="6,2"
+                                        IsVisible="{Binding HasAnyUnread}" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Spacing="3" VerticalAlignment="Center">
+                                        <TextBlock Text="🔔" FontSize="10" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding TotalUnreadCount}" FontSize="10" FontWeight="Bold" Foreground="#DC2626" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Device ID Badge (Unique ID / Nomor Device) -->
+                            <Border Background="#F1F5F9" CornerRadius="6" Padding="7,2" BorderBrush="#E2E8F0" BorderThickness="1" Margin="0,3,0,0" HorizontalAlignment="Left"
+                                    ToolTip.Tip="{Binding Manager.LocalIpAddress, StringFormat='IP: {0}'}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6">
+                                    <Ellipse Width="7" Height="7" Fill="#10B981" VerticalAlignment="Center" ToolTip.Tip="Online"/>
+                                    <TextBlock Text="ID:" FontSize="10" FontWeight="Bold" Foreground="#4F46E5" VerticalAlignment="Center"/>
+                                    <SelectableTextBlock Text="{Binding Manager.LocalDeviceId}" FontSize="11" FontWeight="SemiBold" Foreground="#1E293B" VerticalAlignment="Center" ToolTip.Tip="Device Unique ID"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Device Name, Media Folder & Language Flags (Right) -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                        <!-- Device Name Setting -->
+                        <TextBlock Text="{Binding Strings.MyDevice}" FontSize="12" Foreground="#64748B" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding EditableDeviceName}" FontSize="13" FontWeight="SemiBold" Foreground="#0F172A" Width="140" Height="34" CornerRadius="6" BorderBrush="#CBD5E1" BorderThickness="1" Background="#FFFFFF" VerticalContentAlignment="Center" Padding="8,4" VerticalAlignment="Center"/>
+                        <Button Content="{Binding Strings.Change}" Command="{Binding SaveDeviceNameCommand}" Background="#4F46E5" Foreground="White" FontSize="12" FontWeight="Bold" CornerRadius="6" Height="34" Padding="12,6" Cursor="Hand" VerticalAlignment="Center"/>
+
+                        <Button Content="{Binding Strings.MediaFolder}" Command="{Binding OpenAppMediaFolderCommand}" Background="#F1F5F9" Foreground="#334155" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6" Height="34" Padding="12,6" FontSize="12" FontWeight="SemiBold" Cursor="Hand" VerticalAlignment="Center"/>
+
+                        <!-- Segmented Flag Language Switcher (Indonesian & English) -->
+                        <Border Background="#F1F5F9" CornerRadius="8" Padding="3" BorderBrush="#CBD5E1" BorderThickness="1" Height="36" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="3" VerticalAlignment="Center">
+                                <!-- Indonesian Flag Button -->
+                                <Button Command="{Binding SetIndonesianCommand}" 
+                                        Classes="lang-btn"
+                                        Classes.active="{Binding IsIndonesian}"
+                                        ToolTip.Tip="Bahasa Indonesia">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6">
+                                        <!-- Bendera Indonesia Vector (Merah Putih) -->
+                                        <Border Width="20" Height="14" CornerRadius="2" BorderBrush="#94A3B8" BorderThickness="0.8" ClipToBounds="True">
+                                            <Grid RowDefinitions="*, *">
+                                                <Border Grid.Row="0" Background="#E11D48"/>
+                                                <Border Grid.Row="1" Background="#FFFFFF"/>
+                                            </Grid>
+                                        </Border>
+                                        <TextBlock Text="ID" Classes="lang-label" FontSize="11" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- English Flag Button -->
+                                <Button Command="{Binding SetEnglishCommand}" 
+                                        Classes="lang-btn"
+                                        Classes.active="{Binding IsEnglish}"
+                                        ToolTip.Tip="English">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6">
+                                        <!-- Bendera Inggris (UK Union Jack Vector) -->
+                                        <Border Width="20" Height="14" CornerRadius="2" BorderBrush="#94A3B8" BorderThickness="0.8" ClipToBounds="True">
+                                            <Viewbox Stretch="Fill">
+                                                <Grid Width="60" Height="36" Background="#012169">
+                                                    <!-- White diagonal saltire -->
+                                                    <Path Data="M0,0 L60,36 M60,0 L0,36" Stroke="#FFFFFF" StrokeThickness="10"/>
+                                                    <!-- Red diagonal saltire -->
+                                                    <Path Data="M0,0 L60,36 M60,0 L0,36" Stroke="#C8102E" StrokeThickness="4"/>
+                                                    <!-- White cross -->
+                                                    <Rectangle Fill="#FFFFFF" Width="14" Height="36" HorizontalAlignment="Center"/>
+                                                    <Rectangle Fill="#FFFFFF" Height="14" Width="60" VerticalAlignment="Center"/>
+                                                    <!-- Red cross -->
+                                                    <Rectangle Fill="#C8102E" Width="8" Height="36" HorizontalAlignment="Center"/>
+                                                    <Rectangle Fill="#C8102E" Height="8" Width="60" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Viewbox>
+                                        </Border>
+                                        <TextBlock Text="EN" Classes="lang-label" FontSize="11" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- 1B. MOBILE HEADER (HEADER SAAT DI CONTACT / PEER LIST) -->
+            <Border Grid.Row="1" IsVisible="{Binding IsMobileTopBarVisible}" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="14,10">
+                <Grid RowDefinitions="Auto, Auto, Auto" RowSpacing="8">
+                    <!-- Top Row: Brand & Actions -->
+                    <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Image Source="avares://LanChat/Assets/app_logo.png" Width="28" Height="28" Stretch="Uniform" VerticalAlignment="Center"/>
+                            <TextBlock Text="LAN CHAT" FontWeight="Bold" FontSize="16" Foreground="#0F172A" VerticalAlignment="Center"/>
+                            <Border Background="#F1F5F9" CornerRadius="4" Padding="4,1" BorderBrush="#E2E8F0" BorderThickness="1" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Strings.AppVersion, StringFormat='v{0}'}" FontSize="10" FontWeight="SemiBold" Foreground="#475569"/>
+                            </Border>
+                            <Border Background="#FEE2E2" BorderBrush="#FCA5A5" BorderThickness="1" CornerRadius="10" Padding="6,2"
+                                    IsVisible="{Binding HasAnyUnread}" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="3" VerticalAlignment="Center">
+                                    <TextBlock Text="🔔" FontSize="10" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TotalUnreadCount}" FontSize="10" FontWeight="Bold" Foreground="#DC2626" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Actions (Media Folder, Language Toggle, About) -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <Button Command="{Binding OpenAppMediaFolderCommand}" Background="#F1F5F9" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6" Height="30" Padding="8,4" Cursor="Hand" ToolTip.Tip="{Binding Strings.MediaFolder}">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="📁" FontSize="13" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Media" FontSize="11" FontWeight="SemiBold" Foreground="#334155" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding ToggleLanguageCommand}" Background="#F1F5F9" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6" Height="30" Padding="8,4" Cursor="Hand" ToolTip.Tip="Ganti Bahasa">
+                                <TextBlock Text="{Binding Strings.LanguageToggleShortText}" FontWeight="Bold" FontSize="11" Foreground="#4F46E5" VerticalAlignment="Center"/>
+                            </Button>
+                            <Button Content="ℹ️" Command="{Binding ShowAboutCommand}" Background="#F1F5F9" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6" Width="30" Height="30" Padding="0" Cursor="Hand" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Middle Row: Device Name Setting -->
+                    <Grid Grid.Row="1" ColumnDefinitions="*, Auto">
+                        <TextBox Grid.Column="0" Text="{Binding EditableDeviceName}" FontSize="12" FontWeight="SemiBold" Foreground="#0F172A" Height="32" CornerRadius="6" BorderBrush="#CBD5E1" BorderThickness="1" Background="#FFFFFF" VerticalContentAlignment="Center" Padding="8,2" Margin="0,0,6,0"/>
+                        <Button Grid.Column="1" Content="{Binding Strings.Change}" Command="{Binding SaveDeviceNameCommand}" Background="#4F46E5" Foreground="White" FontSize="11" FontWeight="Bold" CornerRadius="6" Height="32" Padding="12,4" Cursor="Hand"/>
+                    </Grid>
+
+                    <!-- Bottom Row: Full-width ID Badge (Never overlaps) -->
+                    <Border Grid.Row="2" Background="#F1F5F9" CornerRadius="6" Padding="8,4" BorderBrush="#E2E8F0" BorderThickness="1">
+                        <Grid ColumnDefinitions="Auto, Auto, *">
+                            <Ellipse Grid.Column="0" Width="7" Height="7" Fill="#10B981" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Grid.Column="1" Text="ID: " FontSize="10" FontWeight="Bold" Foreground="#4F46E5" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="{Binding Manager.LocalDeviceId}" FontSize="11" FontWeight="SemiBold" Foreground="#1E293B" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- 2. MAIN CONTENT (RESPONSIVE SPLIT SIDEBAR & CHAT) -->
+            <Grid x:Name="MainContentGrid" Grid.Row="2" ColumnDefinitions="310, *">
+                <!-- SIDEBAR: PEER LIST -->
+                <Border Grid.Column="0" IsVisible="{Binding IsSidebarVisible}" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="0,0,1,0">
+                    <Grid RowDefinitions="Auto, *">
+                        <!-- Sidebar Header -->
+                        <Border Grid.Row="0" Background="#F8FAFC" Padding="16,14" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6">
+                                    <Path Data="M3,17 L21,17 M12,17 L12,13 M6,17 L6,11 M18,17 L18,11" Stroke="#4F46E5" StrokeThickness="2" Width="14" Height="14" Stretch="Uniform" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Strings.DevicesOnLan}" FontWeight="Bold" FontSize="11" Foreground="#475569" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding Strings.DevicesOnLanSub}" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Peer List with Vertical Scrolling -->
+                        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" Padding="8">
+                            <ItemsControl ItemsSource="{Binding Manager.Peers}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="models:DevicePeer">
+                                        <Border Classes="peer-card"
+                                                Classes.selected="{Binding IsSelected}">
+                                            <!-- Pointer Pressed To Select Peer -->
+                                            <Button Classes="peer-btn"
+                                                    Command="{Binding ((vm:MainViewModel)DataContext).SelectTargetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}">
+                                                <Grid ColumnDefinitions="Auto, *, Auto">
+                                                    <!-- Icon (Circle with Emoji/Broadcast) -->
+                                                    <Border Grid.Column="0" Width="38" Height="38" CornerRadius="19" Background="#EEF2FF" Margin="0,0,10,0">
+                                                        <Panel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                            <TextBlock Text="📢" FontSize="16" IsVisible="{Binding IsBroadcastTarget}"/>
+                                                            <TextBlock Text="💻" FontSize="16" IsVisible="{Binding !IsBroadcastTarget}"/>
+                                                        </Panel>
+                                                    </Border>
+
+                                                    <!-- Device Name & Unique ID (WhatsApp-like ID) -->
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="#0F172A" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding Id, StringFormat='ID: {0}'}" FontSize="11" Foreground="#64748B" Margin="0,1,0,0" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Id}" IsVisible="{Binding !IsBroadcastTarget}"/>
+                                                        <TextBlock Text="{Binding ((vm:MainViewModel)DataContext).Strings.BroadcastSubtitle, RelativeSource={RelativeSource AncestorType=UserControl}}" FontSize="11" Foreground="#64748B" Margin="0,1,0,0" IsVisible="{Binding IsBroadcastTarget}"/>
+                                                    </StackPanel>
+
+                                                    <!-- Status Indicators & Delete Button -->
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" Margin="6,0,0,0">
+                                                        <!-- Notification Bell Badge -->
+                                                        <Border Background="#FEE2E2" BorderBrush="#FCA5A5" BorderThickness="1" CornerRadius="10" Padding="6,2" IsVisible="{Binding HasUnread}">
+                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="3">
+                                                                <TextBlock Text="🔔" FontSize="10" VerticalAlignment="Center"/>
+                                                                <TextBlock Text="{Binding UnreadCount}" FontSize="10" FontWeight="Bold" Foreground="#DC2626" VerticalAlignment="Center"/>
+                                                            </StackPanel>
+                                                        </Border>
+
+                                                        <!-- Online / Offline Status Dot -->
+                                                        <Panel VerticalAlignment="Center">
+                                                            <Ellipse Width="8" Height="8" Fill="#10B981" IsVisible="{Binding IsOnline}" ToolTip.Tip="Online"/>
+                                                            <Ellipse Width="8" Height="8" Fill="#94A3B8" IsVisible="{Binding !IsOnline}" ToolTip.Tip="Offline"/>
+                                                        </Panel>
+
+                                                        <!-- Tombol Delete Offline Device (Transparan PNG) -->
+                                                        <Button Classes="delete-peer-btn"
+                                                                Command="{Binding ((vm:MainViewModel)DataContext).DeletePeerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                IsVisible="{Binding CanDelete}"
+                                                                ToolTip.Tip="{Binding ((vm:MainViewModel)DataContext).Strings.DeleteOfflineDeviceTooltip, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                                            <Image Source="avares://LanChat/Assets/delete.png" Stretch="Uniform"/>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Button>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <!-- RIGHT: CHAT AREA -->
+                <Grid Grid.Column="{Binding ChatAreaColumnIndex}" IsVisible="{Binding IsChatAreaVisible}" Background="#F8FAFC" RowDefinitions="Auto, *, Auto">
+                    <!-- Chat Header -->
+                    <Border Grid.Row="0" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="10,8" MinHeight="56">
+                        <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                            <!-- Back Button to Peer List on Mobile -->
+                            <Button Grid.Column="0" Command="{Binding BackToPeerListCommand}"
+                                    IsVisible="{Binding IsMobileMode}"
+                                    Background="Transparent" BorderThickness="0"
+                                    Padding="4,4,8,4" Cursor="Hand" VerticalAlignment="Center">
+                                <TextBlock Text="←" FontSize="22" FontWeight="Bold" Foreground="#4F46E5"/>
+                            </Button>
+
+                            <!-- Peer Details (Stacked vertically: Name on top, ID on bottom - NEVER COLLIDES) -->
+                            <Grid Grid.Column="1" VerticalAlignment="Center" Margin="2,0,8,0">
+                                <StackPanel VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Strings.ChatRoom}" Foreground="#64748B" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsMobileMode}"/>
+                                        <TextBlock Text="{Binding SelectedTarget.DisplayName}" FontWeight="Bold" FontSize="15" Foreground="#0F172A" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding SelectedTarget.Id, StringFormat='ID: {0}'}" FontSize="10" Foreground="#64748B" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" ToolTip.Tip="{Binding SelectedTarget.Id}" IsVisible="{Binding !SelectedTarget.IsBroadcastTarget}"/>
+                                    <TextBlock Text="{Binding ((vm:MainViewModel)DataContext).Strings.BroadcastSubtitle, RelativeSource={RelativeSource AncestorType=UserControl}}" FontSize="10" Foreground="#64748B" Margin="0,2,0,0" IsVisible="{Binding SelectedTarget.IsBroadcastTarget}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Mode Badge -->
+                            <Border Grid.Column="2" Background="#EEF2FF" CornerRadius="6" Padding="8,4" BorderBrush="#C7D2FE" BorderThickness="1" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding CurrentChatModeBadgeText}" FontWeight="Bold" FontSize="10" Foreground="#4338CA"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Message Feed -->
+                    <ScrollViewer x:Name="MessageScrollViewer" Grid.Row="1" Padding="20,16" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding FilteredMessages}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="models:ChatMessage">
+                                    <Grid Margin="0,6">
+                                        <!-- Left-aligned Incoming Message -->
+                                        <Border IsVisible="{Binding !IsOutgoing}" HorizontalAlignment="Left" MaxWidth="550"
+                                                Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="12" Padding="14,10"
+                                                BoxShadow="0 1 3 0 #10000000">
+                                            <StackPanel Spacing="4">
+                                                <!-- Sender & Time Header -->
+                                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding SenderName}" FontWeight="Bold" FontSize="12" Foreground="#4F46E5"/>
+                                                    <Border Background="#F1F5F9" CornerRadius="4" Padding="4,1" IsVisible="{Binding !IsDirect}">
+                                                        <TextBlock Text="Broadcast" FontSize="9" Foreground="#64748B"/>
+                                                    </Border>
+                                                    <TextBlock Text="{Binding FormattedTime}" FontSize="10" Foreground="#94A3B8"/>
+                                                </StackPanel>
+
+                                                <!-- Text Content -->
+                                                <TextBlock Text="{Binding Content}" FontSize="14" Foreground="#1E293B" TextWrapping="Wrap" IsVisible="{Binding Content, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+                                                <!-- Image Content (Click to View Fullscreen) -->
+                                                <Button Command="{Binding ((vm:MainViewModel)DataContext).OpenImageViewerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="Transparent" BorderThickness="0" Padding="0" Margin="0,4,0,0"
+                                                        Cursor="Hand" IsVisible="{Binding IsImage}">
+                                                    <Button.Styles>
+                                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                                            <Setter Property="Background" Value="Transparent"/>
+                                                        </Style>
+                                                    </Button.Styles>
+                                                    <Border CornerRadius="8" ClipToBounds="True" MaxHeight="280">
+                                                        <Image Source="{Binding LocalFilePath, Converter={StaticResource ByteArrayToBitmapConverter}}" Stretch="Uniform"/>
+                                                    </Border>
+                                                </Button>
+
+                                                <!-- Video Content (WhatsApp Style) -->
+                                                <Button Command="{Binding ((vm:MainViewModel)DataContext).PlayVideoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="Transparent" BorderThickness="0" Padding="0" Margin="0,4,0,0"
+                                                        Cursor="Hand" IsVisible="{Binding IsVideo}">
+                                                    <Button.Styles>
+                                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                                            <Setter Property="Background" Value="Transparent"/>
+                                                        </Style>
+                                                    </Button.Styles>
+                                                    <Border Width="240" Height="150" CornerRadius="10" ClipToBounds="True" Background="#0F172A">
+                                                        <Grid>
+                                                            <!-- Cinematic Dark Background Gradient -->
+                                                            <Border Background="#1E293B" Opacity="0.95"/>
+                                                            
+                                                            <!-- Center WhatsApp-Style Glassmorphic Play Button -->
+                                                            <Border Width="50" Height="50" CornerRadius="25"
+                                                                    Background="#80000000" BorderBrush="#50FFFFFF" BorderThickness="1.5"
+                                                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                    BoxShadow="0 4 12 0 #40000000">
+                                                                <TextBlock Text="▶" Foreground="#FFFFFF" FontSize="20"
+                                                                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                                            </Border>
+
+                                                            <!-- Bottom Left Badge (Video Icon & Size) -->
+                                                            <Border HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                                                                    Background="#85000000" CornerRadius="10" Padding="8,3" Margin="8">
+                                                                <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                                                    <TextBlock Text="🎬" FontSize="11" VerticalAlignment="Center"/>
+                                                                    <TextBlock Text="{Binding FormattedFileSize}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+                                                </Button>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Right-aligned Outgoing Message -->
+                                        <Border IsVisible="{Binding IsOutgoing}" HorizontalAlignment="Right" MaxWidth="550"
+                                                Background="#4F46E5" CornerRadius="12" Padding="14,10"
+                                                BoxShadow="0 2 4 0 #204F46E5">
+                                            <StackPanel Spacing="4">
+                                                <!-- Sender & Time Header -->
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="6" VerticalAlignment="Center">
+                                                    <TextBlock Text="Anda" FontWeight="Bold" FontSize="12" Foreground="#E0E7FF"/>
+                                                    <Border Background="#4338CA" CornerRadius="4" Padding="4,1" IsVisible="{Binding !IsDirect}">
+                                                        <TextBlock Text="Broadcast" FontSize="9" Foreground="#C7D2FE"/>
+                                                    </Border>
+                                                    <TextBlock Text="{Binding FormattedTime}" FontSize="10" Foreground="#C7D2FE"/>
+                                                    
+                                                    <!-- WhatsApp-style Delivery Status Checkmarks (Khusus Direct) -->
+                                                    <TextBlock Text="{Binding StatusCheckmarkIcon}" 
+                                                               Foreground="{Binding StatusCheckmarkColor}" 
+                                                               FontWeight="Bold" 
+                                                               FontSize="12" 
+                                                               VerticalAlignment="Center" 
+                                                               ToolTip.Tip="{Binding StatusTooltip}" 
+                                                               IsVisible="{Binding ShowStatusCheckmark}"/>
+                                                </StackPanel>
+
+                                                <!-- Text Content -->
+                                                <TextBlock Text="{Binding Content}" FontSize="14" Foreground="#FFFFFF" TextWrapping="Wrap" IsVisible="{Binding Content, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+                                                <!-- Image Content (Click to View Fullscreen) -->
+                                                <Button Command="{Binding ((vm:MainViewModel)DataContext).OpenImageViewerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="Transparent" BorderThickness="0" Padding="0" Margin="0,4,0,0"
+                                                        Cursor="Hand" IsVisible="{Binding IsImage}">
+                                                    <Button.Styles>
+                                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                                            <Setter Property="Background" Value="Transparent"/>
+                                                        </Style>
+                                                    </Button.Styles>
+                                                    <Border CornerRadius="8" ClipToBounds="True" MaxHeight="280">
+                                                        <Image Source="{Binding LocalFilePath, Converter={StaticResource ByteArrayToBitmapConverter}}" Stretch="Uniform"/>
+                                                    </Border>
+                                                </Button>
+
+                                                <!-- Video Content (WhatsApp Style) -->
+                                                <Button Command="{Binding ((vm:MainViewModel)DataContext).PlayVideoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="Transparent" BorderThickness="0" Padding="0" Margin="0,4,0,0"
+                                                        Cursor="Hand" IsVisible="{Binding IsVideo}">
+                                                    <Button.Styles>
+                                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                                            <Setter Property="Background" Value="Transparent"/>
+                                                        </Style>
+                                                    </Button.Styles>
+                                                    <Border Width="240" Height="150" CornerRadius="10" ClipToBounds="True" Background="#0F172A">
+                                                        <Grid>
+                                                            <!-- Cinematic Dark Background Gradient -->
+                                                            <Border Background="#1E293B" Opacity="0.95"/>
+                                                            
+                                                            <!-- Center WhatsApp-Style Glassmorphic Play Button -->
+                                                            <Border Width="50" Height="50" CornerRadius="25"
+                                                                    Background="#80000000" BorderBrush="#50FFFFFF" BorderThickness="1.5"
+                                                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                    BoxShadow="0 4 12 0 #40000000">
+                                                                <TextBlock Text="▶" Foreground="#FFFFFF" FontSize="20"
+                                                                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                                            </Border>
+
+                                                            <!-- Bottom Left Badge (Video Icon & Size) -->
+                                                            <Border HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                                                                    Background="#85000000" CornerRadius="10" Padding="8,3" Margin="8">
+                                                                <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                                                    <TextBlock Text="🎬" FontSize="11" VerticalAlignment="Center"/>
+                                                                    <TextBlock Text="{Binding FormattedFileSize}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+                                                </Button>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Input Bar -->
+                    <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Padding="10,10">
+                        <Grid ColumnDefinitions="Auto, *, Auto" VerticalAlignment="Center">
+                            <!-- Attach Media Button (Paperclip Icon) -->
+                            <Button Grid.Column="0" Command="{Binding ToggleAttachmentSheetCommand}"
+                                    Background="#F1F5F9" Foreground="#334155" BorderBrush="#CBD5E1" BorderThickness="1"
+                                    CornerRadius="8" Width="42" Height="38" Padding="0" Margin="0,0,8,0"
+                                    Cursor="Hand" ToolTip.Tip="{Binding Strings.AttachMedia}">
+                                <TextBlock Text="📎" FontSize="18" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Button>
+
+                            <!-- Message Input Box -->
+                            <TextBox Grid.Column="1" Text="{Binding MessageInput}" PlaceholderText="{Binding Strings.TypeMessagePlaceholder}" VerticalAlignment="Center" VerticalContentAlignment="Center" Height="38" CornerRadius="8" BorderBrush="#CBD5E1" BorderThickness="1" Padding="12,6" FontSize="14" Margin="0,0,8,0">
+                                <TextBox.KeyBindings>
+                                    <KeyBinding Gesture="Enter" Command="{Binding SendMessageCommand}"/>
+                                </TextBox.KeyBindings>
+                            </TextBox>
+
+                            <!-- Send Button -->
+                            <Button Grid.Column="2" Command="{Binding SendMessageCommand}" Background="#4F46E5" Foreground="White" CornerRadius="8" Padding="14,8" Height="38" Cursor="Hand">
+                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Strings.Send}" FontSize="13" FontWeight="Bold" IsVisible="{Binding !IsMobileMode}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="➤" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <!-- 3. MODAL CONFIRM DELETE OVERLAY (CROSS-PLATFORM POPUP) -->
+        <Border Background="#80000000" IsVisible="{Binding IsConfirmDeleteOpen}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+            <Border Background="#FFFFFF" CornerRadius="12" Padding="24" Width="380" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 10 25 0 #40000000">
+                <StackPanel Spacing="16">
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <Border Background="#FEE2E2" CornerRadius="16" Width="32" Height="32">
+                            <TextBlock Text="⚠️" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="{Binding Strings.ConfirmDeleteTitle}" FontWeight="Bold" FontSize="15" Foreground="#0F172A" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding ConfirmDeleteMessage}" FontSize="13" Foreground="#475569" TextWrapping="Wrap"/>
+
+                    <Grid ColumnDefinitions="*, *" Margin="0,8,0,0">
+                        <Button Grid.Column="0" Content="{Binding Strings.Cancel}" Command="{Binding ConfirmDeleteNoCommand}" Background="#F1F5F9" Foreground="#475569" CornerRadius="8" Padding="12,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,6,0" Cursor="Hand"/>
+                        <Button Grid.Column="1" Content="Ya, Hapus" Command="{Binding ConfirmDeleteYesCommand}" Background="#EF4444" Foreground="White" FontWeight="Bold" CornerRadius="8" Padding="12,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="6,0,0,0" Cursor="Hand"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- 4. MODAL ALERT OVERLAY -->
+        <Border Background="#80000000" IsVisible="{Binding IsAlertOpen}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+            <Border Background="#FFFFFF" CornerRadius="12" Padding="24" Width="380" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 10 25 0 #40000000">
+                <StackPanel Spacing="16">
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <Image Source="avares://LanChat/Assets/app_logo.png" Width="38" Height="38" Stretch="Uniform" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding AlertTitle}" FontWeight="Bold" FontSize="15" Foreground="#0F172A" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding AlertMessage}" FontSize="13" Foreground="#475569" TextWrapping="Wrap"/>
+
+                    <Button Content="OK" Command="{Binding CloseAlertCommand}" Background="#4F46E5" Foreground="White" FontWeight="Bold" CornerRadius="8" Padding="14,8" HorizontalAlignment="Right" Cursor="Hand"/>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- 5. MODAL CONFIRM CHANGE DEVICE NAME OVERLAY -->
+        <Border Background="#80000000" IsVisible="{Binding IsConfirmChangeDeviceNameOpen}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+            <Border Background="#FFFFFF" CornerRadius="12" Padding="24" Width="430" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 10 25 0 #40000000">
+                <StackPanel Spacing="16">
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <Border Background="#FEF3C7" CornerRadius="18" Width="36" Height="36">
+                            <TextBlock Text="⚠️" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="{Binding Strings.ConfirmChangeDeviceNameTitle}" FontWeight="Bold" FontSize="15" Foreground="#0F172A" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding Strings.ConfirmChangeDeviceNameMessage}" FontSize="13" Foreground="#475569" TextWrapping="Wrap" LineHeight="20"/>
+
+                    <Grid ColumnDefinitions="*, *" Margin="0,8,0,0">
+                        <Button Grid.Column="0" Content="{Binding Strings.Cancel}" Command="{Binding ConfirmChangeDeviceNameNoCommand}" Background="#F1F5F9" Foreground="#475569" FontWeight="SemiBold" CornerRadius="8" Padding="12,10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,6,0" Cursor="Hand"/>
+                        <Button Grid.Column="1" Content="{Binding Strings.YesChange}" Command="{Binding ConfirmChangeDeviceNameYesCommand}" Background="#4F46E5" Foreground="White" FontWeight="Bold" CornerRadius="8" Padding="12,10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="6,0,0,0" Cursor="Hand"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- 6. MODAL ABOUT OVERLAY -->
+        <Border Background="#80000000" IsVisible="{Binding IsAboutOpen}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+            <Border Background="#FFFFFF" CornerRadius="12" Padding="28" Width="450" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 10 25 0 #40000000">
+                <StackPanel Spacing="16">
+                    <!-- Brand Header in About -->
+                    <StackPanel Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                        <Image Source="avares://LanChat/Assets/app_logo.png" Width="48" Height="48" Stretch="Uniform" VerticalAlignment="Center"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <TextBlock Text="LAN CHAT" FontWeight="Bold" FontSize="18" Foreground="#0F172A"/>
+                                <Border Background="#EEF2FF" CornerRadius="4" Padding="6,2" BorderBrush="#C7D2FE" BorderThickness="1">
+                                    <TextBlock Text="{Binding Strings.AppVersion, StringFormat='v{0}'}" FontSize="11" FontWeight="Bold" Foreground="#4338CA"/>
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Text="{Binding Strings.SubTitle}" FontSize="12" Foreground="#64748B" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Separator Background="#E2E8F0" Height="1"/>
+
+                    <!-- Description -->
+                    <TextBlock Text="{Binding Strings.AboutDescription}" FontSize="13" Foreground="#475569" TextWrapping="Wrap" LineHeight="20"/>
+
+                    <!-- Tech Info Card -->
+                    <Border Background="#F8FAFC" CornerRadius="8" Padding="12,10" BorderBrush="#E2E8F0" BorderThickness="1">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="{Binding Strings.AboutTechInfo}" FontSize="12" FontWeight="SemiBold" Foreground="#4F46E5"/>
+                            <TextBlock Text="P2P UDP Broadcast &amp; TCP Socket Streaming" FontSize="11" Foreground="#64748B"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Close Button -->
+                    <Button Content="OK" Command="{Binding CloseAboutCommand}" Background="#4F46E5" Foreground="White" FontWeight="Bold" CornerRadius="8" Padding="22,9" HorizontalAlignment="Right" Cursor="Hand"/>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- 7. WHATSAPP-STYLE ATTACHMENT BOTTOM SHEET -->
+        <Border Background="#50000000" IsVisible="{Binding IsAttachmentSheetOpen}"
+                VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                ZIndex="90">
+            <Grid>
+                <!-- Scrim backdrop: tap anywhere to close -->
+                <Button Command="{Binding CloseAttachmentSheetCommand}"
+                        Background="Transparent" BorderThickness="0"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <Button.Template>
+                        <ControlTemplate>
+                            <Rectangle Fill="Transparent"/>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <!-- Bottom Sheet Container (Slides up from bottom) -->
+                <Border VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
+                        Background="#FFFFFF"
+                        CornerRadius="24,24,0,0"
+                        Padding="16,14,16,28"
+                        BoxShadow="0 -6 30 0 #35000000">
+                    <StackPanel Spacing="16" MaxWidth="440" HorizontalAlignment="Stretch">
+                        <!-- Top Drag Handle -->
+                        <Border Width="40" Height="4" CornerRadius="2" Background="#CBD5E1"
+                                HorizontalAlignment="Center"/>
+
+                        <!-- Action Grid (WhatsApp Style) -->
+                        <UniformGrid Columns="3" HorizontalAlignment="Stretch" Margin="0,4,0,4">
+                            <!-- 1. Galeri / Foto -->
+                            <Button Command="{Binding AttachImageCommand}"
+                                    Background="Transparent" BorderThickness="0" Padding="4,6" Cursor="Hand"
+                                    HorizontalAlignment="Center">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                    </Style>
+                                </Button.Styles>
+                                <StackPanel HorizontalAlignment="Center" Spacing="8">
+                                    <Border Width="60" Height="60" CornerRadius="30" Background="#2563EB"
+                                            BoxShadow="0 4 14 0 #352563EB">
+                                        <!-- Photo / Gallery Icon -->
+                                        <Path Data="M4,4H20A2,2 0 0,1 22,6V18A2,2 0 0,1 20,20H4A2,2 0 0,1 2,18V6A2,2 0 0,1 4,4M4,6V18H20V6H4M6,16L9,12L11,14.5L14,10.5L18,16H6Z"
+                                              Fill="White" Width="26" Height="26" Stretch="Uniform"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding Strings.Gallery}" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="#1E293B" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- 2. Video -->
+                            <Button Command="{Binding AttachVideoCommand}"
+                                    Background="Transparent" BorderThickness="0" Padding="4,6" Cursor="Hand"
+                                    HorizontalAlignment="Center">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                    </Style>
+                                </Button.Styles>
+                                <StackPanel HorizontalAlignment="Center" Spacing="8">
+                                    <Border Width="60" Height="60" CornerRadius="30" Background="#E11D48"
+                                            BoxShadow="0 4 14 0 #35E11D48">
+                                        <!-- Movie / Video Clapperboard Icon -->
+                                        <Path Data="M18,4L20,8H17L15,4H13L15,8H12L10,4H8L10,8H7L5,4H4A2,2 0 0,0 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V4H18M4,18V10H20V18H4Z"
+                                              Fill="White" Width="26" Height="26" Stretch="Uniform"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding Strings.Video}" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="#1E293B" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- 3. Folder Media -->
+                            <Button Command="{Binding OpenAppMediaFolderCommand}"
+                                    Background="Transparent" BorderThickness="0" Padding="4,6" Cursor="Hand"
+                                    HorizontalAlignment="Center">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                    </Style>
+                                </Button.Styles>
+                                <StackPanel HorizontalAlignment="Center" Spacing="8">
+                                    <Border Width="60" Height="60" CornerRadius="30" Background="#F59E0B"
+                                            BoxShadow="0 4 14 0 #35F59E0B">
+                                        <!-- Folder Icon -->
+                                        <Path Data="M10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6H12L10,4Z"
+                                              Fill="White" Width="26" Height="26" Stretch="Uniform"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding Strings.MediaFolder}" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="#1E293B" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- 8. WHATSAPP-STYLE FULLSCREEN IMAGE VIEWER OVERLAY -->
+        <Border Background="#FF000000" IsVisible="{Binding IsImageViewerOpen}"
+                VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                ZIndex="100">
+            <Grid RowDefinitions="Auto, *, Auto">
+                <!-- Top Overlay Bar (WhatsApp/Gallery Style) -->
+                <Border Grid.Row="0" Background="#CC000000" Padding="12,10" BorderBrush="#1AFFFFFF" BorderThickness="0,0,0,1">
+                    <Grid ColumnDefinitions="Auto, *, Auto">
+                        <!-- Left: Back Button & Sender Info -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <Button Command="{Binding CloseImageViewerCommand}"
+                                    Background="Transparent" BorderThickness="0" Width="40" Height="40" CornerRadius="20" Padding="0" Cursor="Hand"
+                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="#2AFFFFFF"/>
+                                    </Style>
+                                </Button.Styles>
+                                <Path Data="M20,11H7.83L13.42,5.41L12,4L4,12L12,20L13.41,18.59L7.83,13H20V11Z"
+                                      Fill="#FFFFFF" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button>
+                            <StackPanel VerticalAlignment="Center" Spacing="1">
+                                <TextBlock Text="{Binding ViewingMessage.SenderName}" FontWeight="SemiBold" FontSize="15" Foreground="#FFFFFF"/>
+                                <TextBlock Text="{Binding ViewingMessage.FormattedTime}" FontSize="12" Foreground="#94A3B8"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Right: Icon-only Action Buttons (Share & Download) -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <!-- Share Icon Button -->
+                            <Button Command="{Binding ShareViewingImageCommand}"
+                                    Background="Transparent" BorderThickness="0"
+                                    Width="40" Height="40" CornerRadius="20" Padding="0" Cursor="Hand"
+                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                    ToolTip.Tip="Bagikan">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="#2AFFFFFF"/>
+                                    </Style>
+                                </Button.Styles>
+                                <Path Data="M18,16.08C17.24,16.08 16.56,16.38 16.04,16.85L8.91,12.7C8.96,12.47 9,12.24 9,12C9,11.76 8.96,11.53 8.91,11.3L15.96,7.19C16.5,7.69 17.21,8 18,8A3,3 0 0,0 21,5A3,3 0 0,0 18,2A3,3 0 0,0 15,5C15,5.24 15.04,5.47 15.09,5.7L8.04,9.81C7.5,9.31 6.79,9 6,9A3,3 0 0,0 3,12A3,3 0 0,0 6,15C6.79,15 7.5,14.69 8.04,14.19L15.16,18.34C15.11,18.55 15.08,18.77 15.08,19C15.08,20.61 16.39,21.91 18,21.91C17.61,21.91 18.92,20.61 18.92,19A2.92,2.92 0 0,0 16,16.08Z"
+                                      Fill="#FFFFFF" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button>
+
+                            <!-- Download / Save Icon Button -->
+                            <Button Command="{Binding DownloadViewingImageCommand}"
+                                    Background="Transparent" BorderThickness="0"
+                                    Width="40" Height="40" CornerRadius="20" Padding="0" Cursor="Hand"
+                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                    ToolTip.Tip="Simpan">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="#2AFFFFFF"/>
+                                    </Style>
+                                </Button.Styles>
+                                <Path Data="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"
+                                      Fill="#FFFFFF" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Center: Fullscreen Image Content with Native Pinch-to-Zoom & Pan -->
+                <controls:PinchZoomContainer x:Name="ImageZoomContainer"
+                                             Grid.Row="1"
+                                             Background="#000000"
+                                             HorizontalAlignment="Stretch"
+                                             VerticalAlignment="Stretch">
+                    <Image Source="{Binding ViewingImagePath, Converter={StaticResource ByteArrayToBitmapConverter}}"
+                           Stretch="Uniform"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+                </controls:PinchZoomContainer>
+
+                <!-- Bottom Caption Bar (If text content exists) -->
+                <Border Grid.Row="2" Background="#CC000000" Padding="16,12"
+                        IsVisible="{Binding ViewingMessage.Content, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                        BorderBrush="#1AFFFFFF" BorderThickness="0,1,0,0">
+                    <TextBlock Text="{Binding ViewingMessage.Content}" Foreground="#FFFFFF" FontSize="14" TextWrapping="Wrap"
+                               HorizontalAlignment="Center" TextAlignment="Center" MaxWidth="600"/>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

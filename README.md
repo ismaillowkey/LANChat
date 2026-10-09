@@ -1,9 +1,9 @@
-# LAN Chat v0.2.3 (Cross-Platform P2P Messenger)
+# LAN Chat (Cross-Platform Local P2P Messenger)
 
-Aplikasi chat lokal (LAN / Wi-Fi) tanpa ketergantungan pada server eksternal ataupun cloud. Berjalan secara murni **Peer-to-Peer (P2P)** antar perangkat dalam satu jaringan lokal dengan dukungan:
-- **Desktop (Windows)**: WPF (.NET Framework 4.7.2)
-- **Mobile (Android/iOS)**: .NET MAUI (.NET 10.0)
-- **Shared Core**: `LanChat.Core` (.NET Standard 2.0 & .NET 10.0 Multi-target)
+Aplikasi chat lokal (LAN / Wi-Fi) tanpa ketergantungan pada server eksternal ataupun cloud. Berjalan secara murni **Peer-to-Peer (P2P)** antar perangkat dalam satu jaringan lokal dengan dukungan multi-platform:
+- **Desktop (Windows 32/64-bit & Linux)**: .NET 10.0
+- **Mobile (Android APK)**: .NET 10.0
+- **Shared Core**: `LanChat.Core`
 
 ---
 
@@ -18,21 +18,21 @@ Aplikasi chat lokal (LAN / Wi-Fi) tanpa ketergantungan pada server eksternal ata
    - **`📢 Semua Device (Broadcast)`**: Pesan otomatis terkirim ke seluruh perangkat di LAN.
    - **Direct Message (1-on-1)**: Klik device tertentu pada panel kiri untuk chat privat langsung via koneksi TCP.
    - Notifikasi **Lonceng (`🔔 [jumlah]`)** di panel kiri saat ada pesan direct masuk.
+   - Status centang pesan ala WhatsApp: ✓ (Terkirim), ✓✓ abu-abu (Diterima), ✓✓ biru (Dibaca).
 
 3. **Penyimpanan Riwayat Chat Lokal (Chat History Persistence)**:
    - Pesan tersimpan secara lokal di `%APPDATA%\LanChat\chat_history.json` sehingga riwayat chat tidak hilang saat aplikasi ditutup.
-   - Daftar kontak lawan bicara direct tetap tersimpan di panel kiri (dengan indikator status hijau saat Online dan abu-abu saat Offline).
+   - Daftar kontak lawan bicara direct tetap tersimpan di panel kiri dengan highlight status aktif.
 
 4. **Kirim Foto & Video Ala WhatsApp**:
    - Mendukung pengiriman foto (JPG, PNG, GIF, WEBP, BMP) dan video (MP4, MKV, AVI, dll) hingga 250 MB.
    - File media disimpan di folder lokal: `%APPDATA%\LanChat\Media\`.
-   - **Prinsip WhatsApp**: Jika file foto dihapus dari folder media oleh pengguna, bubble chat tidak akan rusak/error, melainkan otomatis menampilkan status *"Pengirim mengirim gambar (File telah dihapus)"*.
    - Tersedia tombol cepat **`📁 Folder Media`** di header aplikasi untuk membuka direktori penyimpanan media.
 
 5. **Pengaturan Identitas & Info Jaringan**:
-   - Nama device tersimpan permanen di `%APPDATA%\LanChat\settings.json` dan dapat diubah sewaktu-waktu.
-   - Menampilkan alamat IP lokal dan MAC Address perangkat.
-   - Tampilan Light Theme modern dan bersih dengan icon resmi LAN & Chat.
+   - Device Unique GUID tersimpan permanen di registry/pengaturan.
+   - Nama device tersimpan di `%APPDATA%\LanChat\config.ini` dan dapat diubah sewaktu-waktu.
+   - Auto-scroll ke pesan terbawah saat membuka chat atau menerima pesan baru.
 
 ---
 
@@ -40,39 +40,19 @@ Aplikasi chat lokal (LAN / Wi-Fi) tanpa ketergantungan pada server eksternal ata
 
 ```
 LAN Chat/
-├── LanChat.sln                           # Solution File Visual Studio
-├── build_desktop_exe.bat                 # Script build Portable Desktop EXE
-├── build_mobile_apk.bat                  # Script build Mobile Android APK
-├── create_installer_windows.bat          # Script build Setup Installer Windows (NSIS)
-├── installer.nsi                         # Konfigurasi NSIS Modern UI 2 Installer
+├── LanChat.slnx                         # Solution File
+├── build_installer_desktop_win32.bat    # Script build NSIS Setup Installer Windows Win32
+├── build_portable_desktop_win32.bat     # Script build Portable ZIP Windows Win32
+├── build_installer_desktop_linux32.bat  # Script build Installer Linux 32-bit (.tar.gz)
+├── build_installer_mobile_android.bat   # Script build Android APK
+├── installer.nsi                        # Konfigurasi NSIS Modern UI 2 Installer
 ├── src/
-│   ├── LanChat.Core/                     # Shared Library (.NET Standard 2.0 & .NET 10.0)
-│   │   ├── Models/
-│   │   │   ├── ChatMessage.cs            # Model data pesan (teks, foto, video, status media)
-│   │   │   ├── DevicePeer.cs             # Model data device di LAN (IP, MAC, Port, Online)
-│   │   │   ├── MessageType.cs            # Enum Text, Image, Video
-│   │   │   └── NetworkPacket.cs          # Protokol packet UDP beacon & TCP framing
-│   │   └── Services/
-│   │       ├── AppSettingsService.cs     # Penyimpanan setting nama device
-│   │       ├── ChatHistoryService.cs     # Penyimpanan riwayat pesan lokal
-│   │       ├── LanChatManager.cs         # Facade coordinator
-│   │       ├── MediaStorageService.cs    # Manajemen penyimpanan file foto & video
-│   │       ├── NetworkUtils.cs           # Deteksi IP, Subnet, dan MAC Address
-│   │       ├── StoragePaths.cs           # Sentralisasi path folder AppData & Media
-│   │       ├── TcpChatTransport.cs       # TCP Socket Streaming (Foto, Video & Chat)
-│   │       └── UdpDiscoveryService.cs    # UDP Multicast / Broadcast Discovery
-│   │
-│   ├── LanChat.Wpf/                      # Windows Desktop App (WPF .NET Framework 4.7.2)
-│   │   ├── Converters/                   # XAML Converters
-│   │   ├── Resources/                    # App Logo (PNG & ICO)
-│   │   ├── ViewModels/                   # MVVM MainWindowViewModel
-│   │   └── MainWindow.xaml               # Antarmuka Desktop Modern Light Theme
-│   │
-│   └── LanChat.Maui/                     # Mobile App (.NET MAUI 10 Android/iOS)
-│       ├── Converters/                   # MAUI Converters
-│       ├── Platforms/Android/            # MulticastLock & Android Permissions
-│       ├── ViewModels/                   # MVVM Mobile MainChatViewModel
-│       └── MainPage.xaml                 # Antarmuka Mobile Responsif
+│   ├── LanChat.Core/                    # Network, P2P Socket, Storage, Identity
+│   ├── LanChat/                         # Cross-platform UI (Views & ViewModels)
+│   ├── LanChat.Desktop/                 # Desktop Entry Point (Win32 & Linux)
+│   ├── LanChat.Android/                 # Mobile Android Entry Point
+│   ├── LanChat.Browser/                 # WebAssembly Entry Point
+│   └── LanChat.iOS/                     # iOS Entry Point
 ```
 
 ---
@@ -83,37 +63,24 @@ Tersedia file batch otomatis di root direktori:
 
 1. **Build Windows Setup Installer (NSIS)**:
    ```cmd
-   create_installer_windows.bat
+   build_installer_desktop_win32.bat
    ```
-   *Menghasilkan file installer Windows lengkap dengan desktop shortcut, start menu, dan uninstaller di `publish\Installer\LAN_Chat_Setup_v0.2.3.exe`.*
+   *Menghasilkan file installer Windows lengkap dengan desktop shortcut, start menu, firewall rules, dan uninstaller di `publish\desktop_win32\LAN_Chat_Setup_v[VERSION]_win32.exe`.*
 
-2. **Build Desktop EXE Portable**:
+2. **Build Desktop Portable ZIP**:
    ```cmd
-   build_desktop_exe.bat
+   build_portable_desktop_win32.bat
    ```
-   *Menghasilkan file eksekusi siap pakai di `publish\Desktop\LanChat.Wpf.exe`.*
+   *Menghasilkan file arsip ZIP portable di `publish\desktop_portable_win32\LAN_Chat_Portable_v[VERSION]_win32.zip`.*
 
 3. **Build Android APK**:
    ```cmd
-   build_mobile_apk.bat
+   build_installer_mobile_android.bat
    ```
-   *Menghasilkan file package Android di `publish\Mobile\LanChat.apk`.*
+   *Menghasilkan file package Android di `publish\mobile_android\LAN_Chat_v[VERSION].apk`.*
 
----
-
-## 🚀 Cara Menjalankan
-
-### 1. Menjalankan Desktop App (WPF)
-Jalankan melalui terminal:
-```powershell
-dotnet run --project src/LanChat.Wpf/LanChat.Wpf.csproj
-```
-> **Tips Simulasi 2 Device di 1 Komputer**:
-> Buka 2 jendela terminal dan jalankan perintah di atas di masing-masing jendela. Port TCP akan otomatis beralih jika port 45451 sedang dipakai, sehingga kedua instance dapat langsung saling mengenali dan bertukar chat, foto, maupun video.
-
-### 2. Menjalankan Mobile App (.NET MAUI di Android)
-Pastikan perangkat Android terhubung via USB Debugging (atau emulator aktif) dalam satu jaringan Wi-Fi:
-```powershell
-dotnet build src/LanChat.Maui/LanChat.Maui.csproj -t:Run -f net10.0-android
-```
-atau buka file solusi `LanChat.sln` di Visual Studio dan jalankan ke target perangkat Android Anda.
+4. **Build Linux 32-bit**:
+   ```cmd
+   build_installer_desktop_linux32.bat
+   ```
+   *Menghasilkan paket `publish\desktop_linux32\LAN_Chat_Linux32_Setup_v[VERSION].tar.gz`.*

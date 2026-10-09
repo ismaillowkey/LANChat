@@ -1,0 +1,15 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:LanChat.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="using:LanChat.Views"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="LanChat.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="{Binding Strings.AppTitle}"
+        Width="1180" Height="750" MinWidth="950" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Icon="/Assets/app_logo.ico">
+        <views:MainView />
+</Window>

@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LanChat.Android/LanChat.Android.csproj" />
+    <Project Path="src/LanChat.Browser/LanChat.Browser.csproj" />
+    <Project Path="src/LanChat.Core/LanChat.Core.csproj" />
+    <Project Path="src/LanChat.Desktop/LanChat.Desktop.csproj" />
+    <Project Path="src/LanChat.iOS/LanChat.iOS.csproj" />
+    <Project Path="src/LanChat/LanChat.csproj" />
+  </Folder>
+</Solution>

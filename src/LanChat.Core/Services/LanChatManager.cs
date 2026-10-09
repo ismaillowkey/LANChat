@@ -9,9 +9,10 @@ public partial class LanChatManager : ObservableObject, IDisposable
     private readonly UdpDiscoveryService _discoveryService;
     private readonly TcpChatTransport _transportService;
     private readonly SynchronizationContext? _syncContext;
+    private CancellationTokenSource? _retryCts;
 
     [ObservableProperty]
-    private string _localDeviceId = Guid.NewGuid().ToString();
+    private string _localDeviceId = DeviceIdentityService.GetOrCreateDeviceId();
 
     [ObservableProperty]
     private string _localDeviceName = Environment.MachineName;
@@ -28,6 +29,26 @@ public partial class LanChatManager : ObservableObject, IDisposable
     [ObservableProperty]
     private DevicePeer _selectedTarget;
 
+    partial void OnSelectedTargetChanged(DevicePeer? oldValue, DevicePeer newValue)
+    {
+        void UpdateSelection()
+        {
+            foreach (var p in Peers)
+            {
+                p.IsSelected = (newValue != null && p.Id == newValue.Id);
+            }
+        }
+
+        if (_syncContext != null && SynchronizationContext.Current != _syncContext)
+        {
+            _syncContext.Post(_ => UpdateSelection(), null);
+        }
+        else
+        {
+            UpdateSelection();
+        }
+    }
+
     public ObservableCollection<DevicePeer> Peers { get; } = new();
     public ObservableCollection<ChatMessage> Messages { get; } = new();
 
@@ -37,6 +58,7 @@ public partial class LanChatManager : ObservableObject, IDisposable
     {
         _syncContext = SynchronizationContext.Current;
 
+        LocalDeviceId = DeviceIdentityService.GetOrCreateDeviceId();
         LocalDeviceName = AppSettingsService.LoadDeviceName(customDeviceName ?? Environment.MachineName);
         LocalMacAddress = NetworkUtils.GetLocalMacAddress();
 
@@ -51,6 +73,7 @@ public partial class LanChatManager : ObservableObject, IDisposable
 
         var broadcastTarget = DevicePeer.CreateBroadcastTarget();
         broadcastTarget.MacAddress = "FF:FF:FF:FF:FF:FF";
+        broadcastTarget.IsSelected = true;
         Peers.Add(broadcastTarget);
         _selectedTarget = broadcastTarget;
 
@@ -66,6 +89,12 @@ public partial class LanChatManager : ObservableObject, IDisposable
         _discoveryService.PeerUpdated += OnPeerUpdated;
         _discoveryService.PeerLost += OnPeerLost;
         _transportService.MessageReceived += OnIncomingMessage;
+        _transportService.IsChatActiveWithPeer = (peerId) =>
+        {
+            if (!AppLifecycleService.IsForeground) return false;
+            if (AppLifecycleService.IsChatWindowVisible?.Invoke() == false) return false;
+            return SelectedTarget != null && !SelectedTarget.IsBroadcastTarget && SelectedTarget.Id == peerId;
+        };
     }
 
     private void RestorePeersFromHistory(List<ChatMessage> history)
@@ -102,7 +131,8 @@ public partial class LanChatManager : ObservableObject, IDisposable
                     Name = kvp.Value,
                     IpAddress = "Offline",
                     MacAddress = "-",
-                    IsOnline = false
+                    IsOnline = false,
+                    IsSelected = (SelectedTarget != null && kvp.Key == SelectedTarget.Id)
                 });
             }
         }
@@ -120,6 +150,11 @@ public partial class LanChatManager : ObservableObject, IDisposable
         _discoveryService.LocalMacAddress = LocalMacAddress;
         _discoveryService.LocalTcpPort = LocalTcpPort;
         _discoveryService.Start();
+
+        // 3. Start 5-second background retry loop for pending direct messages
+        _retryCts?.Cancel();
+        _retryCts = new CancellationTokenSource();
+        Task.Run(() => RetryPendingMessagesLoopAsync(_retryCts.Token));
     }
 
     public void UpdateLocalDeviceName(string newName)
@@ -130,6 +165,29 @@ public partial class LanChatManager : ObservableObject, IDisposable
 
         _discoveryService.LocalDeviceName = LocalDeviceName;
         _ = _discoveryService.BroadcastAnnouncementAsync("ANNOUNCE");
+    }
+
+    public void RemovePeer(DevicePeer peer)
+    {
+        if (peer == null || peer.IsBroadcastTarget) return;
+
+        RunOnUI(() =>
+        {
+            Peers.Remove(peer);
+
+            if (SelectedTarget?.Id == peer.Id)
+            {
+                SelectedTarget = Peers.FirstOrDefault(p => p.IsBroadcastTarget) ?? DevicePeer.CreateBroadcastTarget();
+            }
+
+            var toRemove = Messages.Where(m => m.IsDirect && (m.SenderId == peer.Id || m.TargetId == peer.Id)).ToList();
+            foreach (var m in toRemove)
+            {
+                Messages.Remove(m);
+            }
+        });
+
+        ChatHistoryService.RemoveMessagesForPeer(peer.Id);
     }
 
     private void RunOnUI(Action action)
@@ -151,6 +209,7 @@ public partial class LanChatManager : ObservableObject, IDisposable
             var existing = Peers.FirstOrDefault(p => p.Id == peer.Id);
             if (existing == null)
             {
+                peer.IsSelected = (SelectedTarget != null && peer.Id == SelectedTarget.Id);
                 Peers.Add(peer);
             }
             else
@@ -180,6 +239,7 @@ public partial class LanChatManager : ObservableObject, IDisposable
             }
             else
             {
+                peer.IsSelected = (SelectedTarget != null && peer.Id == SelectedTarget.Id);
                 Peers.Add(peer);
             }
         });
@@ -201,6 +261,15 @@ public partial class LanChatManager : ObservableObject, IDisposable
     {
         if (msg.SenderId == LocalDeviceId) return;
 
+        // Deduplication: if message already exists, do not duplicate
+        lock (Messages)
+        {
+            if (Messages.Any(m => m.Id == msg.Id))
+            {
+                return;
+            }
+        }
+
         msg.UpdateMediaState();
         ChatHistoryService.AppendMessage(msg);
 
@@ -209,6 +278,70 @@ public partial class LanChatManager : ObservableObject, IDisposable
             Messages.Add(msg);
             MessageReceived?.Invoke(msg);
         });
+    }
+
+    private void OnAckReceived(TransportPacket ack)
+    {
+        RunOnUI(() =>
+        {
+            var targetStatus = ack.Action == "ACK_READ" ? MessageStatus.Read : MessageStatus.Delivered;
+            var toUpdate = new List<ChatMessage>();
+
+            if (!string.IsNullOrEmpty(ack.MessageId))
+            {
+                var msg = Messages.FirstOrDefault(m => m.Id == ack.MessageId);
+                if (msg != null && msg.Status < targetStatus)
+                {
+                    toUpdate.Add(msg);
+                }
+            }
+
+            if (ack.AckMessageIds != null && ack.AckMessageIds.Count > 0)
+            {
+                var idSet = new HashSet<string>(ack.AckMessageIds);
+                var msgs = Messages.Where(m => idSet.Contains(m.Id) && m.Status < targetStatus);
+                toUpdate.AddRange(msgs);
+            }
+
+            if (ack.Action == "ACK_READ" && !string.IsNullOrEmpty(ack.SenderId))
+            {
+                // All outgoing direct messages to this peer are marked Read
+                var msgs = Messages.Where(m => m.IsOutgoing && m.IsDirect && m.TargetId == ack.SenderId && m.Status < MessageStatus.Read);
+                toUpdate.AddRange(msgs);
+            }
+
+            foreach (var m in toUpdate.Distinct())
+            {
+                m.Status = targetStatus;
+                ChatHistoryService.UpdateMessageStatus(m.Id, targetStatus);
+            }
+        });
+    }
+
+    public void MarkChatAsRead(string peerId)
+    {
+        if (string.IsNullOrEmpty(peerId) || peerId == DevicePeer.BroadcastTargetId) return;
+
+        var peer = Peers.FirstOrDefault(p => p.Id == peerId);
+        if (peer != null)
+        {
+            peer.HasUnread = false;
+            peer.UnreadCount = 0;
+        }
+
+        var unreadMsgIds = Messages.Where(m => !m.IsOutgoing && m.IsDirect && m.SenderId == peerId).Select(m => m.Id).ToList();
+
+        if (peer != null && peer.IsOnline && peer.IpAddress != "Offline")
+        {
+            var ackPacket = new TransportPacket
+            {
+                Action = "ACK_READ",
+                SenderId = LocalDeviceId,
+                TargetId = peerId,
+                AckMessageIds = unreadMsgIds
+            };
+            _ = _transportService.SendPacketAsync(peer.IpAddress, peer.TcpPort, ackPacket);
+        }
     }
 
     public async Task<bool> SendTextMessageAsync(string text, DevicePeer? target = null)
@@ -225,6 +358,7 @@ public partial class LanChatManager : ObservableObject, IDisposable
             Type = MessageType.Text,
             Content = text,
             IsOutgoing = true,
+            Status = MessageStatus.Sent,
             Timestamp = DateTime.Now
         };
 
@@ -240,14 +374,12 @@ public partial class LanChatManager : ObservableObject, IDisposable
             Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
         };
 
+        // Always save to history and UI immediately (starts at Centang 1 Sent)
+        ChatHistoryService.AppendMessage(msg);
+        RunOnUI(() => Messages.Add(msg));
+
+        // Attempt immediate transmission
         bool success = await SendPacketToTargetAsync(target, packet);
-
-        if (success)
-        {
-            ChatHistoryService.AppendMessage(msg);
-            RunOnUI(() => Messages.Add(msg));
-        }
-
         return success;
     }
 
@@ -271,6 +403,7 @@ public partial class LanChatManager : ObservableObject, IDisposable
             LocalFilePath = localPath,
             FileSizeBytes = imageBytes.Length,
             IsOutgoing = true,
+            Status = MessageStatus.Sent,
             Timestamp = DateTime.Now
         };
 
@@ -291,14 +424,11 @@ public partial class LanChatManager : ObservableObject, IDisposable
             Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
         };
 
+        // Always save to history and UI immediately
+        ChatHistoryService.AppendMessage(msg);
+        RunOnUI(() => Messages.Add(msg));
+
         bool success = await SendPacketToTargetAsync(target, packet);
-
-        if (success)
-        {
-            ChatHistoryService.AppendMessage(msg);
-            RunOnUI(() => Messages.Add(msg));
-        }
-
         return success;
     }
 
@@ -321,6 +451,7 @@ public partial class LanChatManager : ObservableObject, IDisposable
             LocalFilePath = localPath,
             FileSizeBytes = videoBytes.Length,
             IsOutgoing = true,
+            Status = MessageStatus.Sent,
             Timestamp = DateTime.Now
         };
 
@@ -341,14 +472,11 @@ public partial class LanChatManager : ObservableObject, IDisposable
             Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
         };
 
+        // Always save to history and UI immediately
+        ChatHistoryService.AppendMessage(msg);
+        RunOnUI(() => Messages.Add(msg));
+
         bool success = await SendPacketToTargetAsync(target, packet);
-
-        if (success)
-        {
-            ChatHistoryService.AppendMessage(msg);
-            RunOnUI(() => Messages.Add(msg));
-        }
-
         return success;
     }
 
@@ -356,13 +484,8 @@ public partial class LanChatManager : ObservableObject, IDisposable
     {
         if (target.IsBroadcastTarget)
         {
-            // Broadcast to all online discovered peers
-            var onlinePeers = Peers.Where(p => !p.IsBroadcastTarget && p.IsOnline).ToList();
-            if (onlinePeers.Count == 0)
-            {
-                // Still allow local message to be displayed even if no peers are connected yet
-                return true;
-            }
+            var onlinePeers = Peers.Where(p => !p.IsBroadcastTarget && p.IsOnline && p.IpAddress != "Offline").ToList();
+            if (onlinePeers.Count == 0) return true;
 
             var tasks = onlinePeers.Select(p => _transportService.SendPacketAsync(p.IpAddress, p.TcpPort, packet));
             await Task.WhenAll(tasks);
@@ -370,18 +493,101 @@ public partial class LanChatManager : ObservableObject, IDisposable
         }
         else
         {
-            // Direct message to specific device
-            if (!target.IsOnline)
+            if (!target.IsOnline || target.IpAddress == "Offline")
             {
-                // Target is currently marked offline
                 return false;
             }
             return await _transportService.SendPacketAsync(target.IpAddress, target.TcpPort, packet);
         }
     }
 
+    private async Task RetryPendingMessagesLoopAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(5000, ct);
+
+                var now = DateTime.Now;
+                List<ChatMessage> pending;
+                lock (Messages)
+                {
+                    pending = Messages.Where(m =>
+                        m.IsOutgoing &&
+                        m.IsDirect &&
+                        m.Status == MessageStatus.Sent &&
+                        (now - m.Timestamp).TotalHours <= 48
+                    ).ToList();
+                }
+
+                foreach (var msg in pending)
+                {
+                    if (ct.IsCancellationRequested) break;
+
+                    var target = Peers.FirstOrDefault(p => p.Id == msg.TargetId);
+                    if (target == null || !target.IsOnline || target.IpAddress == "Offline")
+                        continue;
+
+                    var packet = new TransportPacket
+                    {
+                        MessageId = msg.Id,
+                        SenderId = LocalDeviceId,
+                        SenderName = LocalDeviceName,
+                        TargetId = target.Id,
+                        TargetName = target.Name,
+                        Type = msg.Type,
+                        Content = msg.Content,
+                        FileName = msg.FileName,
+                        FileSize = msg.FileSizeBytes,
+                        Timestamp = new DateTimeOffset(msg.Timestamp).ToUnixTimeMilliseconds()
+                    };
+
+                    if (msg.Type == MessageType.Image)
+                    {
+                        if (msg.ImageData != null)
+                        {
+                            packet.MediaBase64 = Convert.ToBase64String(msg.ImageData);
+                        }
+                        else if (!string.IsNullOrEmpty(msg.LocalFilePath) && File.Exists(msg.LocalFilePath))
+                        {
+                            try
+                            {
+                                var bytes = await File.ReadAllBytesAsync(msg.LocalFilePath, ct);
+                                packet.MediaBase64 = Convert.ToBase64String(bytes);
+                            }
+                            catch { }
+                        }
+                    }
+                    else if (msg.Type == MessageType.Video && !string.IsNullOrEmpty(msg.LocalFilePath) && File.Exists(msg.LocalFilePath))
+                    {
+                        try
+                        {
+                            var bytes = await File.ReadAllBytesAsync(msg.LocalFilePath, ct);
+                            packet.MediaBase64 = Convert.ToBase64String(bytes);
+                        }
+                        catch { }
+                    }
+
+                    await _transportService.SendPacketAsync(target.IpAddress, target.TcpPort, packet);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Retry loop error: {ex.Message}");
+            }
+        }
+    }
+
     public void Stop()
     {
+        _retryCts?.Cancel();
+        _retryCts?.Dispose();
+        _retryCts = null;
         _discoveryService.Stop();
         _transportService.Stop();
     }

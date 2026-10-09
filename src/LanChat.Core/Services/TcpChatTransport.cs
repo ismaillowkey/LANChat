@@ -15,6 +15,8 @@ public class TcpChatTransport : IDisposable
 
     public int BoundPort => _boundPort;
     public event Action<ChatMessage>? MessageReceived;
+    public event Action<TransportPacket>? AckReceived;
+    public Func<string, bool>? IsChatActiveWithPeer;
 
     public int Start(int preferredPort = 45451)
     {
@@ -99,6 +101,13 @@ public class TcpChatTransport : IDisposable
                 var packet = JsonSerializer.Deserialize<TransportPacket>(json);
                 if (packet == null) return;
 
+                // Handle ACK packets (DELIVERED or READ receipts)
+                if (packet.Action == "ACK_DELIVERED" || packet.Action == "ACK_READ")
+                {
+                    AckReceived?.Invoke(packet);
+                    return;
+                }
+
                 byte[]? mediaBytes = null;
                 string? localFilePath = null;
                 long fileSizeBytes = packet.FileSize;
@@ -124,10 +133,35 @@ public class TcpChatTransport : IDisposable
                     LocalFilePath = localFilePath,
                     FileSizeBytes = fileSizeBytes,
                     Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(packet.Timestamp).LocalDateTime,
-                    IsOutgoing = false
+                    IsOutgoing = false,
+                    Status = MessageStatus.Delivered
                 };
 
                 MessageReceived?.Invoke(msg);
+
+                // If this is a direct message, immediately acknowledge receipt on the same connection
+                if (packet.TargetId != DevicePeer.BroadcastTargetId)
+                {
+                    try
+                    {
+                        bool isRead = IsChatActiveWithPeer?.Invoke(packet.SenderId) == true;
+                        var ackPacket = new TransportPacket
+                        {
+                            MessageId = packet.MessageId,
+                            Action = isRead ? "ACK_READ" : "ACK_DELIVERED",
+                            SenderId = packet.TargetId,
+                            TargetId = packet.SenderId
+                        };
+                        var ackJson = JsonSerializer.Serialize(ackPacket);
+                        var ackBytes = Encoding.UTF8.GetBytes(ackJson);
+                        var ackLenBuf = new byte[4];
+                        BinaryPrimitives.WriteInt32BigEndian(ackLenBuf, ackBytes.Length);
+                        await stream.WriteAsync(ackLenBuf, 0, 4, ct);
+                        await stream.WriteAsync(ackBytes, 0, ackBytes.Length, ct);
+                        await stream.FlushAsync(ct);
+                    }
+                    catch { }
+                }
             }
             catch (Exception ex)
             {
@@ -164,6 +198,35 @@ public class TcpChatTransport : IDisposable
             await stream.WriteAsync(lengthBuffer, 0, lengthBuffer.Length, cts.Token);
             await stream.WriteAsync(payloadBytes, 0, payloadBytes.Length, cts.Token);
             await stream.FlushAsync(cts.Token);
+
+            // For direct messages, wait for receiver's immediate ACK response on this stream
+            if (packet.Action == "MESSAGE" && packet.TargetId != DevicePeer.BroadcastTargetId)
+            {
+                try
+                {
+                    using var ackCts = new CancellationTokenSource(4000);
+                    var ackLenBuf = new byte[4];
+                    int ackRead = await ReadExactAsync(stream, ackLenBuf, 0, 4, ackCts.Token);
+                    if (ackRead == 4)
+                    {
+                        int ackLen = BinaryPrimitives.ReadInt32BigEndian(ackLenBuf);
+                        if (ackLen > 0 && ackLen < 65536)
+                        {
+                            var ackBytes = new byte[ackLen];
+                            if (await ReadExactAsync(stream, ackBytes, 0, ackLen, ackCts.Token) == ackLen)
+                            {
+                                var ackJson = Encoding.UTF8.GetString(ackBytes);
+                                var ackPacket = JsonSerializer.Deserialize<TransportPacket>(ackJson);
+                                if (ackPacket != null)
+                                {
+                                    AckReceived?.Invoke(ackPacket);
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
 
             return true;
         }

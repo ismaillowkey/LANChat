@@ -29,17 +29,23 @@ public partial class DevicePeer : ObservableObject
     private DateTime _lastSeen = DateTime.UtcNow;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanDelete))]
     private bool _isOnline = true;
+
+    public bool CanDelete => !IsOnline && !IsBroadcastTarget;
 
     [ObservableProperty]
     private bool _hasUnread;
+
+    [ObservableProperty]
+    private bool _isSelected;
 
     [ObservableProperty]
     private int _unreadCount;
 
     public bool IsBroadcastTarget => Id == BroadcastTargetId;
 
-    public string DisplayName => IsBroadcastTarget ? Services.LocalizationService.Instance.AllDevicesDisplayName : $"{Name} ({IpAddress})";
+    public string DisplayName => IsBroadcastTarget ? Services.LocalizationService.Instance.AllDevicesDisplayName : Name;
 
     public DevicePeer()
     {

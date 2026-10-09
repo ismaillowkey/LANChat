@@ -9,20 +9,21 @@ public class AppSettingsData
 {
     public string DeviceName { get; set; } = string.Empty;
     public string Language { get; set; } = string.Empty;
+    public string DeviceId { get; set; } = string.Empty;
 }
 
 public static class AppSettingsService
 {
-    public static string LoadDeviceName(string defaultName)
+    public static string LoadDeviceId()
     {
         try
         {
             // 1. Check %APPDATA%\LanChat\config.ini
-            var iniVal = IniConfigFile.ReadValue(StoragePaths.IniConfigFilePath, "General", "DeviceName");
+            var iniVal = IniConfigFile.ReadValue(StoragePaths.IniConfigFilePath, "General", "DeviceId");
             if (!string.IsNullOrWhiteSpace(iniVal)) return iniVal!.Trim();
 
             // 2. Check AppDir config.ini
-            var appDirIniVal = IniConfigFile.ReadValue(StoragePaths.AppDirIniConfigFilePath, "General", "DeviceName");
+            var appDirIniVal = IniConfigFile.ReadValue(StoragePaths.AppDirIniConfigFilePath, "General", "DeviceId");
             if (!string.IsNullOrWhiteSpace(appDirIniVal)) return appDirIniVal!.Trim();
 
             // 3. Fallback to settings.json
@@ -31,7 +32,81 @@ public static class AppSettingsService
             {
                 var json = File.ReadAllText(path);
                 var data = JsonSerializer.Deserialize<AppSettingsData>(json);
-                if (data != null && !string.IsNullOrWhiteSpace(data.DeviceName))
+                if (data != null && !string.IsNullOrWhiteSpace(data.DeviceId))
+                {
+                    return data.DeviceId.Trim();
+                }
+            }
+        }
+        catch { }
+        return string.Empty;
+    }
+
+    public static void SaveDeviceId(string deviceId)
+    {
+        try
+        {
+            var cleanId = deviceId.Trim();
+
+            // 1. Save to %APPDATA%\LanChat\config.ini
+            IniConfigFile.WriteValue(StoragePaths.IniConfigFilePath, "General", "DeviceId", cleanId);
+
+            // 2. Also save to AppDir config.ini if exists/writable
+            try
+            {
+                if (File.Exists(StoragePaths.AppDirIniConfigFilePath))
+                {
+                    IniConfigFile.WriteValue(StoragePaths.AppDirIniConfigFilePath, "General", "DeviceId", cleanId);
+                }
+            }
+            catch { }
+
+            // 3. Save to settings.json
+            var path = StoragePaths.SettingsFilePath;
+            AppSettingsData data = new();
+            if (File.Exists(path))
+            {
+                var existingJson = File.ReadAllText(path);
+                data = JsonSerializer.Deserialize<AppSettingsData>(existingJson) ?? new AppSettingsData();
+            }
+            data.DeviceId = cleanId;
+            var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(path, json);
+        }
+        catch { }
+    }
+    public static Func<string>? DefaultDeviceNameResolver { get; set; }
+
+    public static string LoadDeviceName(string defaultName)
+    {
+        if (DefaultDeviceNameResolver != null)
+        {
+            var resolved = DefaultDeviceNameResolver();
+            if (!string.IsNullOrWhiteSpace(resolved))
+            {
+                defaultName = resolved.Trim();
+            }
+        }
+
+        try
+        {
+            // 1. Check %APPDATA%\LanChat\config.ini
+            var iniVal = IniConfigFile.ReadValue(StoragePaths.IniConfigFilePath, "General", "DeviceName");
+            if (!string.IsNullOrWhiteSpace(iniVal) && !iniVal.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+                return iniVal!.Trim();
+
+            // 2. Check AppDir config.ini
+            var appDirIniVal = IniConfigFile.ReadValue(StoragePaths.AppDirIniConfigFilePath, "General", "DeviceName");
+            if (!string.IsNullOrWhiteSpace(appDirIniVal) && !appDirIniVal.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+                return appDirIniVal!.Trim();
+
+            // 3. Fallback to settings.json
+            var path = StoragePaths.SettingsFilePath;
+            if (File.Exists(path))
+            {
+                var json = File.ReadAllText(path);
+                var data = JsonSerializer.Deserialize<AppSettingsData>(json);
+                if (data != null && !string.IsNullOrWhiteSpace(data.DeviceName) && !data.DeviceName.Equals("localhost", StringComparison.OrdinalIgnoreCase))
                 {
                     return data.DeviceName.Trim();
                 }
